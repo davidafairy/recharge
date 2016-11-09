@@ -1,0 +1,20 @@
+/* CSS Document */
+img {border:0px;}
+body{ margin:0px; padding:0px; font-size:12px; line-height:24px;}
+.div{margin:0px ;  padding:0px; padding-top:70px; font-size:12px; line-height:24px;background-image:url(../images/login_new/bg_01.gif); width:100%;}
+.div1{margin:0px auto;  padding:0px; font-size:12px; line-height:24px;background-image:url(../images/login_new/bg_01.gif); width:900px;}
+.bg1{ background-image:url(../images/login_new/bg1_08.png); font-size:22px; font-family:'Î¢ÈíÑÅºÚ'; width:190px; height:47px; line-height:47px; background-repeat:no-repeat; color:#0d0d0d; text-align:center;}
+.bg_blue{ background-image:url(../images/login_new/bg1_10.png); font-size:14px; background-repeat:repeat-x; height:301px; width:900px; color:#FFF;font-family:'Î¢ÈíÑÅºÚ';}
+.bg_blue a{ color:#fff; font-family:'Î¢ÈíÑÅºÚ'; text-decoration:none;}
+.bg_blue a:hover{ color:#90ff00; font-family:'Î¢ÈíÑÅºÚ'; text-decoration:none;}
+.bg_center{ background-image:url(../images/login_new/dl_12.png); background-repeat:no-repeat; height:149px; width:318px; padding:0px; margin:0 auto; margin-top:20px;}
+.txt{ border:1px solid #e2e6e9; width:110px; background-color:#e2e6e9; height:14px; color:#808487;}
+.txt1{  color:#0b0601; line-height:25px; text-align:center; padding-top:15px; font-weight:bold;}
+
+/* »¶Ó­Ò³Ãæt */
+.div_hy{margin:0px ;  padding:0px; padding-top:70px; font-size:12px; line-height:24px;background-image:url(../images/login_new/hy_01.png); width:100%; padding-bottom:190px;}
+
+/* top */
+.div_top{margin:0px ;  padding:0px; padding-top:20px; font-size:12px;background-image:url(../images/login_new/top_03.png); width:100%; height:100%; background-repeat:repeat-x; color:#fff; font-family:'Î¢ÈíÑÅºÚ'; text-decoration:none; font-size:14px;}
+.div_top a{color:#fff; font-family:'Î¢ÈíÑÅºÚ'; text-decoration:none; font-size:14px;}
+.div_top a:hover{color:#90ff00; font-family:'Î¢ÈíÑÅºÚ'; text-decoration:none; font-size:14px;}

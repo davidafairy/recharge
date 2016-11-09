@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+	"../dtd/struts-2.3.dtd">
+
+<struts>
+
+	<constant name="struts.objectFactory" value="spring"></constant>
+    <constant name="struts.enable.DynamicMethodInvocation" value="true" />
+    <constant name="struts.devMode" value="true" />
+	<constant name="struts.convention.classes.reload" value="false"/>
+	<constant name="struts.convention.result.path" value="/WEB-INF/jsp"/>
+	<constant name="struts.multipart.saveDir" value="/upload"/>
+    <constant name="struts.i18n.encoding" value="utf-8" />
+	<constant name="struts.action.extension" value="do,action"/>
+	
+	<package name="orderQuery" extends="struts-default" namespace="/">
+		<interceptors>
+			<interceptor name="securityInterceptor" class="com.redstoneinfo.platform.interceptor.SecurityInterceptor"/>
+			<interceptor name="viewJsNameInterceptor" class="com.redstoneinfo.platform.interceptor.ViewJsNameInterceptor"/>
+			<interceptor name="paginationInterceptor" class="com.redstoneinfo.platform.interceptor.PaginationInterceptor"/>
+			<interceptor name="characterEncodingInterceptor" class="com.redstoneinfo.platform.interceptor.EncodingInterceptor"/>
+			<interceptor-stack name="rsDefaultStack">
+				<interceptor-ref name="securityInterceptor"/>
+				<interceptor-ref name="characterEncodingInterceptor"/>
+				<interceptor-ref name="paginationInterceptor"/>
+				<!--<interceptor-ref name="viewJsNameInterceptor"/>-->
+				<interceptor-ref name="defaultStack"/>
+			</interceptor-stack>
+		</interceptors>
+		<default-interceptor-ref name="rsDefaultStack"/>
+		<global-results>
+			<result name="login" >/WEB-INF/jsp/relogin.jsp</result>
+			<result name="relogin"  >/WEB-INF/jsp/relogin.jsp</result>
+			<result name="errorPage">/WEB-INF/error.jsp</result>
+		</global-results>
+		
+	</package>
+
+	
+</struts>
