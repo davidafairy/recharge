@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+	"../dtd/struts-2.3.dtd">
+
+<struts>
+
+	<constant name="struts.objectFactory" value="spring"></constant>
+    <constant name="struts.enable.DynamicMethodInvocation" value="true" />
+    <constant name="struts.devMode" value="true" />
+	<constant name="struts.convention.classes.reload" value="false"/>
+	<constant name="struts.convention.result.path" value="/WEB-INF/jsp"/>
+	<constant name="struts.multipart.saveDir" value="/upload"/>
+    <constant name="struts.i18n.encoding" value="utf-8" />
+	<constant name="struts.action.extension" value="do,action"/>
+	
+</struts>
