@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration>
+
+	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d -%l [%t] %-5p %x - %m%n" />
+		</layout>
+
+		<!--限制输出级别 -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMax" value="ERROR" />
+			<param name="LevelMin" value="TRACE" />
+		</filter>
+	</appender>
+
+	<appender name="RECHARGE_FILE" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="logs/recharge.log" />
+		<param name="append" value="true" />
+		<param name="DatePattern" value="'.'yyyy-MM-dd" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d -%l [%t] %-5p %x - %m%n" />
+		</layout>
+	</appender>
+	
+	<appender name="ORDER_FILE" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="logs/order.log" />
+		<param name="append" value="true" />
+		<param name="DatePattern" value="'.'yyyy-MM-dd" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d -%l [%t] %-5p %x - %m%n" />
+		</layout>
+	</appender>
+	
+	<appender name="SYSTEM_FILE" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="logs/system.log" />
+		<param name="append" value="true" />
+		<param name="DatePattern" value="'.'yyyy-MM-dd" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d -%l [%t] %-5p %x - %m%n" />
+		</layout>
+	</appender>
+
+	<!--通过<logger></logger>的定义可以将各个包中的类日志输出到不同的日志文件中 -->
+	<logger name="order" additivity="false">
+		<level value="info" />
+		<appender-ref ref="CONSOLE" />
+		<appender-ref ref="ORDER_FILE" />
+	</logger>
+	
+	<logger name="recharge" additivity="false">
+		<level value="info" />
+		<appender-ref ref="CONSOLE" />
+		<appender-ref ref="RECHARGE_FILE" />
+	</logger>
+	
+	<logger name="com.thridrecharge" additivity="false">
+		<level value="info" />
+		<appender-ref ref="CONSOLE" />
+		<appender-ref ref="SYSTEM_FILE" />
+	</logger>
+
+	<root>
+		<priority value="error" />
+		<appender-ref ref="CONSOLE" />
+		<appender-ref ref="SYSTEM_FILE" />
+	</root>
+
+
+</log4j:configuration>  
