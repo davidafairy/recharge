@@ -47,6 +47,9 @@ public class RechargeAction extends ActionSupport {
 	public long money;
 	public String sign;
 	
+	/**
+	 * 收单接口
+	 */
 	@Action(value = "recharge")
 	public void recharge() {
 		log.info("==============================接收请求：============================");
@@ -56,29 +59,7 @@ public class RechargeAction extends ActionSupport {
 		log.info("========money【"+money+"】");
 		log.info("========sign【"+sign+"】");
 		try {
-			
-			//检查IP地址
-			HttpServletRequest request = ServletActionContext.getRequest();
-	        String ipAddress="";
-	        boolean flag = false;
-	        if (null != request) {
-	        	List<String> ipList = AgentMemory.getAgentMemory().getAllIp();
-	            ipAddress = getUserIpAddr(request); // 取客户端IP地址
-	            log.info("请求客户端的IP地址:" + ipAddress);
-	            for (String s : ipList) {
-	                if (StringUtils.contains(s, ipAddress)) {
-	                    flag = true;
-	                    break;
-	                }
-	            }
-	        }
-	        if(!flag) {
-	        	log.info("========充值失败：非法IP地址=>"+ipAddress);
-				jsonWrite(ErrorCode.SERVERUNAVAILABLE);
-				return;
-	        }
-	        
-	        //检查屏蔽号段
+			//1.检查屏蔽号段,陈宏账号不做检查
 			if(!"ch001".equals(agentName)&&(phoneNo.startsWith("156510") || phoneNo.startsWith("156511")
 					 || phoneNo.startsWith("156512") || phoneNo.startsWith("156513")
 					 || phoneNo.startsWith("156514") || phoneNo.startsWith("156515")
@@ -88,82 +69,71 @@ public class RechargeAction extends ActionSupport {
 				return;
 			}
 			
-			//如果金额大于1000元或小于10元,则直接报错
+			//2.检查充值金额，如果金额大于1000元或小于10元,则直接报错,陈宏账号不做检查
 			if (!"ch001".equals(agentName)&&(money > 100000 || money < 1000)) {
 				log.info("========充值失败：ErrorCode:【"+ErrorCode.MONEYFAIL.getErrorCode()+"】，Desc：【金额过大或过小】");
 				jsonWrite(ErrorCode.MONEYFAIL);
 				return;
 			}
 			
-			AgentMemory agentMemory = AgentMemory.getAgentMemory();
-			Agent agent = agentMemory.getAgent(agentName);
-			
-			try {
-				
-				//检查代理商最小可充值金额
-//				log.info("========开始检查代理商最小可充值金额：agentName【"+agentName+"】========");
-//				boolean rechargeAmountState = orderManager.checkRechargeAmount(agent.getId(),money);
-//				if(!rechargeAmountState) {
-//					log.info("========充值失败：ErrorCode:【"+ErrorCode.MONEYFAIL.getErrorCode()+"】，Desc：【金额低于代理商最小可充值金额】");
-//					return ErrorCode.MONEYFAIL.getErrorCode();
-//				}
-				
-				//非陈宏账号,必须大于10元
-				if(agent.getId() != 731 && money == 1000){
-					log.info("========充值失败：ErrorCode:【"+ErrorCode.MONEYFAIL.getErrorCode()+"】，Desc：【金额过大或过小】");
-					jsonWrite(ErrorCode.MONEYFAIL);
-					return;
-				}
-				
-				//检查key是否正确
-				log.info("========开始检查签名原sign：【"+sign+"】========");
-				String source = "agentName="+agentName+"&flowNo="+flowNo+"&phoneNo="+phoneNo+"&money="+money+"&key="+agent.getPassword();
-				log.info("========开始检查签名source：【"+source+"】========");
-				String realSign = MD5Utils.encodeByMD5(source);
-				if (!realSign.equals(sign)) {
-					log.info("========签名检查失败");
+			Agent agent = agentInterfaceManager.findAgentByName(agentName);
+			//3.检查IP地址
+			HttpServletRequest request = ServletActionContext.getRequest();
+	        String ipAddress="";
+	        if (null != request) {
+	            ipAddress = getUserIpAddr(request); // 取客户端IP地址
+	            log.info("请求客户端的IP地址:" + ipAddress);
+	            if (!StringUtils.contains(agent.getIp(), ipAddress)) {
+	            	log.info("========充值失败：非法IP地址=>"+ipAddress);
 					jsonWrite(ErrorCode.SERVERUNAVAILABLE);
 					return;
-				}
-				
-				//检查代理商状态是否可用
-				log.info("========开始检查代理商状态：agentName【"+agentName+"】========");
-				boolean agentState = orderManager.checkAgentState(agent.getId());
-				if (!agentState) {
-					log.info("========充值失败：该代理商【"+agentName+"】暂时不可用");
-					jsonWrite(ErrorCode.SERVERUNAVAILABLE);
-					return;
-				}
-				
-				//检查代理商余额
-				log.info("========开始检查代理商余额：agentName【"+agentName+"】========");
-				boolean agentBalance = orderManager.checkAgentBalance(agent.getId());
-				if (!agentBalance) {
-					log.info("========充值失败：该代理商【"+agentName+"】余额不足");
-					jsonWrite(ErrorCode.BALANCE);
-					return;
-				}
-				
-				//开始充值
-				log.info("========开始记录订单：phoneNo【"+phoneNo+"】，money【"+money+"】========");
-				Order order = new Order();
-				order.setAgentId(agent.getId());
-				order.setCreateTime(Calendar.getInstance().getTime());
-				order.setFlowNo(flowNo);
-				order.setGroupNo(agent.getGroupno());
-				order.setMobile(phoneNo);
-				order.setMoney(money);
-				orderManager.saveOrder(order);
-//				agentInterfaceManager.deducting(agent.getId(),flowNo,agent.getGroupno(),phoneNo, money);
-				log.info("========订单记录完成：phoneNo【"+phoneNo+"】，money【"+money+"】========");
-				
-				jsonWrite(ErrorCode.SUCCESS); //成功
-				return;
-			} catch (RechargeException e) {
-				log.info("========订单接收失败：ErrorCode:【"+e.getErrorCode()+"】，Desc：【"+ErrorCode.getDesc(e.getErrorCode())+"】");
+                }
+	        }
+	        
+	        //4.检查key是否正确
+			log.info("========开始检查签名原sign：【"+sign+"】========");
+			String source = "agentName="+agentName+"&flowNo="+flowNo+"&phoneNo="+phoneNo+"&money="+money+"&key="+agent.getPassword();
+			log.info("========开始检查签名source：【"+source+"】========");
+			String realSign = MD5Utils.encodeByMD5(source);
+			if (!realSign.equals(sign)) {
+				log.info("========签名检查失败");
 				jsonWrite(ErrorCode.SERVERUNAVAILABLE);
 				return;
 			}
+	        
+			//5.检查代理商状态是否可用
+			log.info("========开始检查代理商状态：agentName【"+agentName+"】========");
+			boolean agentState = orderManager.checkAgentState(agent.getId());
+			if (!agentState) {
+				log.info("========充值失败：该代理商【"+agentName+"】暂时不可用");
+				jsonWrite(ErrorCode.SERVERUNAVAILABLE);
+				return;
+			}
+			
+			//检查代理商余额
+			log.info("========开始检查代理商余额：agentName【"+agentName+"】========");
+			if (agent.getBalance() <= 15000000) {
+				log.info("========充值失败：该代理商【"+agentName+"】余额不足");
+				jsonWrite(ErrorCode.BALANCE);
+				return;
+			}
+			
+			//记录订单
+			log.info("========开始记录订单：phoneNo【"+phoneNo+"】，money【"+money+"】========");
+			Order order = new Order();
+			order.setAgentId(agent.getId());
+			order.setCreateTime(Calendar.getInstance().getTime());
+			order.setFlowNo(flowNo);
+			order.setGroupNo(agent.getGroupno());
+			order.setMobile(phoneNo);
+			order.setMoney(money);
+			orderManager.saveOrder(order);
+			log.info("========订单记录完成："+order);
+			
+			jsonWrite(ErrorCode.SUCCESS); //成功
+			return;
+			
+				
 		} catch(Exception e) {
 			e.printStackTrace();
 			log.info("========订单接收失败：ErrorCode:【"+ErrorCode.PORTALFAIL.getErrorCode()+"】，Desc：【前置系统处理失败】");

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
 import com.thridrecharge.service.RechargeException;
+import com.thridrecharge.service.entity.Agent;
 import com.thridrecharge.service.entity.OrderHis;
 import com.thridrecharge.service.entity.ShopNo;
 import com.thridrecharge.service.enums.ErrorCode;
@@ -34,7 +35,12 @@ public class AgentInterfaceManager {
 	@Autowired
 	private RechargeDao rechargeDao;
 	
+	public Agent findAgentByName(String agentName) {
+		return agentInterfaceDao.findAgentByName(agentName);
+	}
 	
+	//新版本中废弃改方法
+	@Deprecated
 	public void deducting(int agentId,String flowNo,String groupno,String mobile,long money,OrderHis orderHis) throws RechargeException{
 		
 		log.info("################进入Socket接口充值###############");
