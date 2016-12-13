@@ -32,9 +32,9 @@ public class RechargeListener implements ServletContextListener {
 
 				@Override
 				public void run() {
-					log.info("************************充值任务启动*******************");
+					log.info("************************充值回调任务启动*******************");
 					rechargeManager.startRecharge();
-					log.info("************************充值任务启动成功*******************");
+					log.info("************************充值回调任务启动成功*******************");
 				}}).start();
 			
 			

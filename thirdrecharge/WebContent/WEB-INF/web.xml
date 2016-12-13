@@ -35,7 +35,7 @@
 		<listener-class>com.thridrecharge.service.RechargeListener</listener-class>
 	</listener>
 
-	<servlet>
+	<!-- <servlet>
         <servlet-name>cxf</servlet-name>
         <servlet-class>org.apache.cxf.transport.servlet.CXFServlet</servlet-class>
         <load-on-startup>2</load-on-startup>
@@ -44,7 +44,7 @@
     <servlet-mapping>
         <servlet-name>cxf</servlet-name>
         <url-pattern>/services/*</url-pattern>
-    </servlet-mapping>
+    </servlet-mapping> -->
 
 	<!-- Struts2 -->
 	<filter>

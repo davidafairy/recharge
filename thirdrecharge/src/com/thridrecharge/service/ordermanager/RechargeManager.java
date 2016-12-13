@@ -37,12 +37,12 @@ public class RechargeManager {
 				//处理内存中已经完成的订单
 				log.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 				List<OrderHis> orderHisList = RechargeService.getRechargeService().getOrderHisList();
-				log.info("@@@@@@@@@@@@@处理内存中已经完成的订单："+orderHisList.size());
+				log.info("@@@@@@@@@@@@@处理内存中已经回调完成的订单："+orderHisList.size());
 				for (OrderHis orderHis : orderHisList) {
-					if (orderHis.getResult() == 1) {
-						log.info("@@@@@@@@@@@@@充值成功，进入扣款："+orderHis.getMobile());
-						rechargeDao.deducting(orderHis.getAgentId(), orderHis.getMoney(),orderHis);
-					}
+//					if (orderHis.getResult() == 1) {
+//						log.info("@@@@@@@@@@@@@充值成功，进入扣款："+orderHis.getMobile());
+//						rechargeDao.deducting(orderHis.getAgentId(), orderHis.getMoney(),orderHis);
+//					}
 					orderDao.saveOrderHis(orderHis);
 					orderDao.cleanOrderById(orderHis.getOrderId());
 					log.info("@@@@@@@@@@@@@处理内存中已经完成的订单（手机号："+orderHis.getMobile()+";订单号:"+orderHis.getFlowNo());
@@ -70,7 +70,7 @@ public class RechargeManager {
 							RechargeService.getRechargeService().processRecharge(orders);
 							
 						} else {
-							log.info("@@@@@@@@@@@@@没有查询到可充值订单，等待2秒");
+							log.info("@@@@@@@@@@@@@没有查询到可回调订单，等待2秒");
 							try {
 								Thread.currentThread().sleep(2000);
 							} catch (InterruptedException e) {

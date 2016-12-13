@@ -55,6 +55,8 @@ public class Agent implements Serializable {
 	@Column(name="MIN_AMOUNT")
 	private long minAmount;
 	
+	private long rate;
+	
 	public int getId() {
 		return id;
 	}
@@ -149,6 +151,14 @@ public class Agent implements Serializable {
 
 	public void setMinAmount(long minAmount) {
 		this.minAmount = minAmount;
+	}
+
+	public long getRate() {
+		return rate;
+	}
+
+	public void setRate(long rate) {
+		this.rate = rate;
 	}
 	
 	

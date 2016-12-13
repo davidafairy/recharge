@@ -98,7 +98,7 @@
 	<tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>
 	
 	
-	<import resource="classpath:META-INF/cxf/cxf.xml"/>
+	<!-- <import resource="classpath:META-INF/cxf/cxf.xml"/>
 	<import resource="classpath:META-INF/cxf/cxf-extension-soap.xml"/>
 	<import resource="classpath:META-INF/cxf/cxf-extension-http-jetty.xml"/>
 	
@@ -111,7 +111,7 @@
             	<constructor-arg>  
                     <map>  
                         <entry key="action" value="UsernameToken Timestamp" />  
-                        <!-- MD5加密明文密码 -->  
+                        MD5加密明文密码  
                         <entry key="passwordType" value="PasswordDigest" />      
                         <entry key="user" value="admin" />
                         <entry key="passwordCallbackRef" >
@@ -127,5 +127,5 @@
 	</jaxws:endpoint>
 	
 	<bean id="serverPasswordCallback" class="com.thridrecharge.service.ServerPasswordCallback">
-	</bean>
+	</bean> -->
 </beans>

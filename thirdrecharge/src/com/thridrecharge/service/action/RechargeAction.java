@@ -110,7 +110,7 @@ public class RechargeAction extends ActionSupport {
 				return;
 			}
 			
-			//检查代理商余额
+			//6.检查代理商余额
 			log.info("========开始检查代理商余额：agentName【"+agentName+"】========");
 			if (agent.getBalance() <= 15000000) {
 				log.info("========充值失败：该代理商【"+agentName+"】余额不足");
@@ -118,8 +118,7 @@ public class RechargeAction extends ActionSupport {
 				return;
 			}
 			
-			//记录订单
-			log.info("========开始记录订单：phoneNo【"+phoneNo+"】，money【"+money+"】========");
+			//7.初始化订单
 			Order order = new Order();
 			order.setAgentId(agent.getId());
 			order.setCreateTime(Calendar.getInstance().getTime());
@@ -127,6 +126,24 @@ public class RechargeAction extends ActionSupport {
 			order.setGroupNo(agent.getGroupno());
 			order.setMobile(phoneNo);
 			order.setMoney(money);
+			order.setDealResult(0);
+			
+			//8.区分渠道
+			if (agent.getRate() == 2) {
+				order.setChannel(2); //线上充值
+			} else {
+				int x=(int)(Math.random()*10);
+				boolean isOffline = agentInterfaceManager.checkRechargeRate(phoneNo);
+				if (isOffline) {
+					order.setChannel(1); //线下充值
+				} else {
+					order.setChannel(1); //线上充值
+				}
+			}
+			
+			
+			//9.记录订单
+			log.info("========开始记录订单：phoneNo【"+phoneNo+"】，money【"+money+"】========");
 			orderManager.saveOrder(order);
 			log.info("========订单记录完成："+order);
 			

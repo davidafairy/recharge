@@ -40,11 +40,23 @@ public class Order {
 	//充值金额
 	private long money;
 	
+	//创建时间
 	private Date createTime;
+	
+	//充值时间
+	@Column(name="RECHARGE_TIME")
+	private Date rechargeTime;
 
 	//加载状态。1：未加载内存；2：已加载内存
 	private int status = 1;
-		
+	
+	//充值结果，默认为0，1：充值成功；2充值失败
+	@Column(name="DEAL_RESULT")
+	private int dealResult = 0;
+	
+	//1:线下；2:线上。默认线下
+	private int channel = 1;
+	
 	public int getId() {
 		return id;
 	}
@@ -109,12 +121,38 @@ public class Order {
 		this.status = status;
 	}
 
+	public int getDealResult() {
+		return dealResult;
+	}
+
+	public void setDealResult(int dealResult) {
+		this.dealResult = dealResult;
+	}
+
+	public int getChannel() {
+		return channel;
+	}
+
+	public void setChannel(int channel) {
+		this.channel = channel;
+	}
+
+	
+	public Date getRechargeTime() {
+		return rechargeTime;
+	}
+
+	public void setRechargeTime(Date rechargeTime) {
+		this.rechargeTime = rechargeTime;
+	}
+
 	@Override
 	public String toString() {
 		return "Order [id=" + id + ", agentId=" + agentId + ", flowNo=" + flowNo + ", groupNo=" + groupNo + ", mobile="
-				+ mobile + ", money=" + money + ", createTime=" + createTime + ", status=" + status + "]";
+				+ mobile + ", money=" + money + ", createTime=" + createTime + ", rechargeTime=" + rechargeTime
+				+ ", status=" + status + ", dealResult=" + dealResult + ", channel=" + channel + "]";
 	}
-	
+
 	
 	
 }

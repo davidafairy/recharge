@@ -21,8 +21,8 @@ import com.thridrecharge.service.ordermanager.OrderManager;
 import com.thridrecharge.service.socketrecharge.AgentInterfaceManager;
 
 
-@WebService(endpointInterface = "com.thridrecharge.service.IRechargeService", serviceName = "RechargeService")
-@SOAPBinding(style = Style.RPC)
+//@WebService(endpointInterface = "com.thridrecharge.service.IRechargeService", serviceName = "RechargeService")
+//@SOAPBinding(style = Style.RPC)
 public class RechargeServiceImpl implements IRechargeService {
 
 	private Log log = LogFactory.getLog("order");
