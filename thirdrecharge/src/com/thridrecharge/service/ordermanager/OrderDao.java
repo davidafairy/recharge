@@ -143,6 +143,7 @@ public class OrderDao extends HibernateDaoSupport {
 		if(agent.getMinAmount() < amount)
 			return true;
 		return false;
+		
 	}
 	
 	public OrderHis findOrderHisByFlowNo(String flowNo) {
