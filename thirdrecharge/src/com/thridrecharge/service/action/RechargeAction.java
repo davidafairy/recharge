@@ -59,15 +59,7 @@ public class RechargeAction extends ActionSupport {
 		log.info("========money【"+money+"】");
 		log.info("========sign【"+sign+"】");
 		try {
-			//1.检查屏蔽号段,陈宏账号不做检查
-			if(!"ch001".equals(agentName)&&(phoneNo.startsWith("156510") || phoneNo.startsWith("156511")
-					 || phoneNo.startsWith("156512") || phoneNo.startsWith("156513")
-					 || phoneNo.startsWith("156514") || phoneNo.startsWith("156515")
-					 || phoneNo.startsWith("156516") || phoneNo.startsWith("1709"))) { //屏蔽18651网段的用户
-				log.info("========充值失败：暂时不支持15651、1709网段的用户");
-				jsonWrite(ErrorCode.SERVERUNAVAILABLE);
-				return;
-			}
+			
 			
 			//2.检查充值金额，如果金额大于1000元或小于10元,则直接报错,陈宏账号不做检查
 			if (!"ch001".equals(agentName)&&(money > 100000 || money < 1000)) {
@@ -127,18 +119,20 @@ public class RechargeAction extends ActionSupport {
 			order.setMobile(phoneNo);
 			order.setMoney(money);
 			order.setDealResult(0);
+			order.setChannel(2); //设置默认线上
 			
 			//8.区分渠道
-			if (agent.getRate() == 2) {
-				order.setChannel(2); //线上充值
-			} else {
-				int x=(int)(Math.random()*10);
+			if(!(phoneNo.startsWith("156510") || phoneNo.startsWith("156511")
+					 || phoneNo.startsWith("156512") || phoneNo.startsWith("156513")
+					 || phoneNo.startsWith("156514") || phoneNo.startsWith("156515")
+					 || phoneNo.startsWith("156516") || phoneNo.startsWith("1709")) && agent.getRate() == 1) { //屏蔽18651网段的用户
+				
+				//当充值号码不在线下屏蔽号段，并且该代理商支持线下充值
+				//则继续按城市计算线下充值概率，只有条件符合，才走线下
 				boolean isOffline = agentInterfaceManager.checkRechargeRate(phoneNo);
 				if (isOffline) {
 					order.setChannel(1); //线下充值
-				} else {
-					order.setChannel(1); //线上充值
-				}
+				} 
 			}
 			
 			
