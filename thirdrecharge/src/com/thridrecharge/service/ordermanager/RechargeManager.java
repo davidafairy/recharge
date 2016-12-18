@@ -43,7 +43,7 @@ public class RechargeManager {
 //						log.info("@@@@@@@@@@@@@充值成功，进入扣款："+orderHis.getMobile());
 //						rechargeDao.deducting(orderHis.getAgentId(), orderHis.getMoney(),orderHis);
 //					}
-					orderDao.saveOrderHis(orderHis);
+//					orderDao.saveOrderHis(orderHis);  不需要保存OrderHis了
 					orderDao.cleanOrderById(orderHis.getOrderId());
 					log.info("@@@@@@@@@@@@@处理内存中已经完成的订单（手机号："+orderHis.getMobile()+";订单号:"+orderHis.getFlowNo());
 					
