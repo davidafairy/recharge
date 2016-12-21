@@ -92,7 +92,7 @@
             	  "condition.eq.agentId":($('#agentId').combobox('getValue')),
             	  "condition.ge.createTime":$("input[name='startCreateTime']").val(),
             	  "condition.le.createTime":$("input[name='endCreateTime']").val(),
-            	  "condition.eq.errorCode":($('#errorCode').combobox('getValue'))
+            	  "condition.eq.result":($('#resultSelect').combobox('getValue'))
             	  
               });  
         } 
@@ -172,11 +172,10 @@
       &nbsp;<span>订单时间:</span><input id="startCreateTime" name="startCreateTime" class="easyui-datebox" size=12 editable ="false"  readonly="readonly" />--<input id="endCreateTime" name="endCreateTime" class="easyui-datebox"  size=12 editable ="false"  readonly="readonly"/>
       <span id="statuscondition">
 		 &nbsp;&nbsp;&nbsp; <span>订单状态:</span>
-		 <select id ="errorCode" class ="easyui-combobox" name ="errorCode" data-options ="panelHeight:'auto'" style =" padding:2px;width:141px;">
+		 <select id ="resultSelect" class ="easyui-combobox" name ="resultSelect" data-options ="panelHeight:'auto'" style =" padding:2px;width:141px;">
 	     	<option value ="" selected ="selected">所有订单</option>
-	     	<option value ="0">成功</option>
-	     	<option value ="9">失败</option>
-	     	<option value ="13">可疑</option>
+	     	<option value ="1">成功</option>
+	     	<option value ="2">失败</option>
 	     </select>
      </span>
       <a href="#" class="easyui-linkbutton" iconCls="icon-search" plain="true" onclick="javascript:doSearch();">查询</a>&nbsp;&nbsp;
