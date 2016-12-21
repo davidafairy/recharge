@@ -81,6 +81,13 @@ public class RechargeRunnable implements Runnable {
 		orderHis.setCreateTime(order.getCreateTime());
 		orderHis.setOrderId(order.getId());
 		orderHis.setRechargeTime(order.getRechargeTime());
+		orderHis.setResult(order.getDealResult());
+		if (order.getDealResult() == 1) {
+			orderHis.setErrorCode(ErrorCode.SUCCESS.getErrorCode());
+		} else {
+			orderHis.setErrorCode(ErrorCode.RECHARGEFAIL.getErrorCode());
+			
+		}
 		
 //		// 检查是否重单
 //		OrderHis repeatOrder = orderDao.findOrderHisByFlowNo(order.getFlowNo());

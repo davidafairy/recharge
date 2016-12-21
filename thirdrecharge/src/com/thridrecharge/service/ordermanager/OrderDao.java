@@ -79,13 +79,13 @@ public class OrderDao extends HibernateDaoSupport {
 				//排序方法
 				crit.addOrder(org.hibernate.criterion.Order.asc("id"));
 				crit.add(Property.forName("agentId").in(agentIds));
-				crit.add(Restrictions.eq("status",1));
+				crit.add(Restrictions.eq("status",3));   //查询充值已完成的
 				//分页
 				crit.setMaxResults(num);
 				List list = crit.list();
 				for (int i=0;i<list.size();i++) {
 					Order order = (Order)list.get(i);
-					order.setStatus(2);
+					order.setStatus(4);  //回调中
 				}
 				return list;
 			}

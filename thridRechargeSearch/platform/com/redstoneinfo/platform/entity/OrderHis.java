@@ -59,9 +59,7 @@ public class OrderHis extends BaseEntity {
 	
 	//������룬�����0��ʾ�ɹ�
 	private int errorCode;
-	
-	//�ص����1���ص��ɹ���2���ص�ʧ��
-	private int callback;
+
 
 	public long id;
 	
@@ -171,13 +169,6 @@ public class OrderHis extends BaseEntity {
 		this.balance = balance;
 	}
 
-	public int getCallback() {
-		return callback;
-	}
-
-	public void setCallback(int callback) {
-		this.callback = callback;
-	}
 
 	public int getErrorCode() {
 		return errorCode;

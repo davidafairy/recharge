@@ -8,7 +8,6 @@ package com.redstoneinfo.platform.utils;
 public class StringUtil {
 	
 	private static char[][] filenameReplaceArray = new char[][]{
-			{'\'', '＼'}, 
 			{'/', '／'}, 
 			{'|', '｜'}, 
 			{'<', '〈'}, 

@@ -67,6 +67,10 @@ private Log log = LogFactory.getLog("order");
 				log.info("========订单查询结果:flowNo:【"+flowNo+"】,result:【充值中】");
 				jsonWrite(2,"充值中");
 			} 
+			if (order.getStatus() == 3) {
+				log.info("========订单查询结果:flowNo:【"+flowNo+"】,result:【正在回调】");
+				jsonWrite(2,"充值中");
+			} 
 			log.info("========订单查询结果:flowNo:【"+flowNo+"】,result:【其他异常】");
 			jsonWrite(5,"其他异常");
 		}else {

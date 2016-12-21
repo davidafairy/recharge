@@ -55,6 +55,7 @@ public class Agent implements Serializable {
 	@Column(name="MIN_AMOUNT")
 	private long minAmount;
 	
+	//1.表示支持线上线下；2.表示只支持线上
 	private long rate;
 	
 	public int getId() {
