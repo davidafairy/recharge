@@ -25,6 +25,7 @@ import com.thridrecharge.service.entity.Agent;
 import com.thridrecharge.service.entity.AreaCode;
 import com.thridrecharge.service.entity.Order;
 import com.thridrecharge.service.enums.ErrorCode;
+import com.thridrecharge.service.enums.OrderChannel;
 import com.thridrecharge.service.memory.AgentMemory;
 import com.thridrecharge.service.memory.AreaCodeMemory;
 import com.thridrecharge.service.ordermanager.OrderManager;
@@ -125,7 +126,7 @@ public class RechargeAction extends ActionSupport {
 			order.setMobile(phoneNo);
 			order.setMoney(money);
 			order.setDealResult(0);
-			order.setChannel(2); //设置默认线上
+			order.setChannel(OrderChannel.ONLINE.intValue()); //设置默认线上
 			
 			//8.区分渠道
 			if(!(phoneNo.startsWith("156510") || phoneNo.startsWith("156511")
@@ -137,14 +138,14 @@ public class RechargeAction extends ActionSupport {
 				//则继续按城市计算线下充值概率，只有条件符合，才走线下
 				boolean isOffline = agentInterfaceManager.checkRechargeRate(phoneNo);
 				if (isOffline) {
-					order.setChannel(1); //线下充值
+					order.setChannel(OrderChannel.OFFLINE.intValue()); //线下充值
 				} 
 			}
 			//卡密充值渠道
 			String areaCodeDesc = AreaCodeMemory.getAreaCodeMemeory().getAgentCode(order.getMobile());
 			AreaCode areaCode = rechargeDao.getAreaCode(areaCodeDesc);
 			if (areaCode.getRechargeStrategy() == 3) {
-				order.setChannel(3); //卡密充值
+				order.setChannel(OrderChannel.RECHARGECARD.intValue()); //卡密充值
 			}
 			
 			//9.记录订单
