@@ -17,7 +17,7 @@ import com.thridrecharge.service.entity.OrderHis;
 import com.thridrecharge.service.entity.ShopNo;
 import com.thridrecharge.service.enums.ErrorCode;
 import com.thridrecharge.service.memory.AreaCodeMemory;
-import com.thridrecharge.service.ordermanager.RechargeDao;
+import com.thridrecharge.service.ordermanager.recharge.RechargeDao;
 import com.thridrecharge.service.socket.BizConstants;
 import com.thridrecharge.service.socket.ByteUtils;
 import com.thridrecharge.service.socket.PosClient;

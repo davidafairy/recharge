@@ -40,7 +40,7 @@ public class RechargeCard {
 	//城市编码
 	private String cityCode;
 	
-	//使用状态。1：未使用；2：已使用
+	//使用状态。1：未使用；2：已使用；3：预占；4：不可用
 	private int useState;
 	
 	//使用时间

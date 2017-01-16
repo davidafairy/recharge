@@ -1,8 +1,11 @@
 package com.redstoneinfo.platform.listener;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -12,11 +15,6 @@ import java.util.Map;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-
-import jxl.write.Label;
-import jxl.write.WritableSheet;
-import jxl.write.WriteException;
-import jxl.write.biff.RowsExceededException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,6 +28,11 @@ import com.redstoneinfo.platform.entity.Agent;
 import com.redstoneinfo.platform.entity.CheckingFile;
 import com.redstoneinfo.platform.entity.OrderHis;
 import com.redstoneinfo.platform.utils.DateUtil;
+
+import jxl.write.Label;
+import jxl.write.WritableSheet;
+import jxl.write.WriteException;
+import jxl.write.biff.RowsExceededException;
 
 public class CheckingFileListener implements ServletContextListener {
 
@@ -55,7 +58,11 @@ public class CheckingFileListener implements ServletContextListener {
 			public void run() {
 				
 				while(true) {
-					Date currentDate = Calendar.getInstance().getTime();
+					Calendar cal = Calendar.getInstance();
+					
+					cal.add(Calendar.HOUR_OF_DAY, -1);
+					
+					Date currentDate = cal.getTime();
 					currentDate.setHours(0);
 					currentDate.setMinutes(0);
 					currentDate.setSeconds(0);
@@ -93,7 +100,8 @@ public class CheckingFileListener implements ServletContextListener {
 							
 							List list = orderDao.listOrderHisListWithCondition(condition);
 							
-							String fileName = "联通对账文件("+condition.get("ge.rechargeTime")+")-"+agent.getLoginName()+".xls";
+//							String fileName = "联通对账文件("+condition.get("ge.rechargeTime")+")-"+agent.getLoginName()+".xls";
+							String fileName = "联通对账文件("+condition.get("ge.rechargeTime")+")-"+agent.getLoginName()+".csv";
 							
 							CheckingFile cf = new CheckingFile();
 							cf.setAgentName(agent.getLoginName());
@@ -102,7 +110,7 @@ public class CheckingFileListener implements ServletContextListener {
 							cf.setFileName(fileName);
 							cf.setGenTime(currentDate);
 							try {
-								genExcelFile(agent,list,fileName);
+								genCsvFile(agent,list,fileName);
 								cf.setResult(1);
 							} catch (Exception e) {
 								cf.setResult(2);
@@ -123,6 +131,97 @@ public class CheckingFileListener implements ServletContextListener {
 		
 	}
 	
+	public String genCsvFile(Agent agent,List list,String fileName) throws Exception {
+		
+		String filePath = null;
+		BufferedWriter csvWtriter = null;
+		
+		try {
+			String tmpFilePath = this.getClass().getResource("/").toURI().getPath().replaceAll("WEB-INF/classes/", "")+"tmpFiles";
+			filePath = tmpFilePath + "/" + fileName;
+			File file = new File(filePath);
+			if (file.exists()) {
+				file.delete();
+			}
+			
+			// GB2312使正确读取分隔符","
+            csvWtriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "GB2312"), 1024);
+            
+            List<Object> headerRow = new ArrayList<Object>();
+            
+            // 写入文件头部
+            headerRow.add("集团编码");
+            headerRow.add("充值类型");
+            headerRow.add("充值交易时间");
+            headerRow.add("小票号");
+            headerRow.add("手机号");
+            headerRow.add("状态");
+            headerRow.add("金额");
+            headerRow.add("扣款金额");
+            headerRow.add("账户余额");
+            
+            writeRowForCsv(headerRow,csvWtriter);
+            
+            
+            //写入数据
+            for (int j=0;j<list.size();j++) {
+            	List<Object> contentRow = new ArrayList<Object>();
+				OrderHis oh = (OrderHis)list.get(j);
+				contentRow.add(agent.getGroupno());
+				contentRow.add("联通充值");
+				contentRow.add(DateUtil.getFormatedDateStr(oh.getRechargeTime(), 2));
+				contentRow.add(oh.getFlowNo());
+				contentRow.add(oh.getMobile());
+				if (oh.getResult() == 1) {
+					contentRow.add("充值成功");
+				}else {
+					contentRow.add("充值失败");
+				}
+
+				
+				contentRow.add(String.valueOf(oh.getMoney()/100));
+				
+				
+				if (oh.getAmount() == 0) {
+					contentRow.add("-");
+				} else {
+					contentRow.add(String.valueOf(((double)oh.getAmount())/100));
+				}
+				
+				if (oh.getBalance() == 0) {
+					contentRow.add("-");
+				} else {
+					contentRow.add(String.valueOf(((double)oh.getBalance())/1000));
+				}
+				
+				
+				writeRowForCsv(contentRow,csvWtriter);
+			}
+            
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return filePath;
+	}
+	
+	/**
+     * 写一行数据方法
+     * @param row
+     * @param csvWriter
+     * @throws IOException
+     */
+    private static void writeRowForCsv(List<Object> row, BufferedWriter csvWriter) throws IOException {
+        // 写入文件头部
+        for (Object data : row) {
+            StringBuffer sb = new StringBuffer();
+            String rowStr = sb.append("\"").append(data).append("\",").toString();
+            csvWriter.write(rowStr);
+        }
+        csvWriter.newLine();
+    }
+	
+	//生产excel对账文件
 	public String genExcelFile(Agent agent,List list,String fileName) throws Exception {
 		OutputStream os = null;
 		jxl.write.WritableWorkbook book = null;

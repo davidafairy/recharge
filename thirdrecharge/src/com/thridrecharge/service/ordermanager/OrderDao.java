@@ -28,7 +28,7 @@ public class OrderDao extends HibernateDaoSupport {
 	}
 	
 	public void saveOrder(Order order) {
-		this.getHibernateTemplate().save(order);
+		this.getHibernateTemplate().saveOrUpdate(order);
 	}
 	
 	public List<Order> getTop10Order() {
@@ -69,7 +69,8 @@ public class OrderDao extends HibernateDaoSupport {
 		return agentIds;
 	}
 	
-	public List<Order> getTopOrders(final int num,final List<Integer> agentIds) {
+	//获取待回调订单
+	public List<Order> getCallbackOrders(final int num,final List<Integer> agentIds) {
 		
 		List list = getHibernateTemplate().executeFind(new HibernateCallback() {
 			public Object doInHibernate(Session session)
@@ -94,6 +95,33 @@ public class OrderDao extends HibernateDaoSupport {
 		return list;
 	}
 	
+	//获取用充值卡充值的订单
+	public List<Order> getCardRechargeOrders(final int num,final List<Integer> agentIds) {
+		
+		List list = getHibernateTemplate().executeFind(new HibernateCallback() {
+			public Object doInHibernate(Session session)
+					throws HibernateException, SQLException {
+				Criteria crit = session.createCriteria(Order.class);
+				
+				//排序方法
+				crit.addOrder(org.hibernate.criterion.Order.asc("id"));
+				crit.add(Property.forName("agentId").in(agentIds));
+				crit.add(Restrictions.eq("status",1));   //查询待充值
+				crit.add(Restrictions.eq("channel",3));   //渠道3表示充值卡充值
+				//分页
+				crit.setMaxResults(num);
+				List list = crit.list();
+				for (int i=0;i<list.size();i++) {
+					Order order = (Order)list.get(i);
+					order.setStatus(2);  //充值中
+				}
+				return list;
+			}
+		});
+		this.getHibernateTemplate().saveOrUpdateAll(list);
+		return list;
+	}
+
 	public void cleanOrder(Order order) {
 		this.getHibernateTemplate().delete(order);
 	}

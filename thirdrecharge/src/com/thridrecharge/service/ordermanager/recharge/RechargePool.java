@@ -1,4 +1,4 @@
-package com.thridrecharge.service.ordermanager;
+package com.thridrecharge.service.ordermanager.recharge;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,9 +12,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.thridrecharge.service.entity.Order;
-import com.thridrecharge.service.entity.OrderHis;
 
-public class RechargeService {
+public class RechargePool {
 
 	private Log log = LogFactory.getLog("recharge");
 	
@@ -24,13 +23,13 @@ public class RechargeService {
 	//最大线程数
 	public static int THREAD_POOL_MAX = 30;
 	
-	private static RechargeService rechargeService = new RechargeService();
+	private static RechargePool rechargePool = new RechargePool();
 	
 	private ThreadPoolExecutor exec = (ThreadPoolExecutor)Executors.newFixedThreadPool(THREAD_POOL_MAX);
 	
 	private boolean isLock = false;
 	
-	private List<OrderHis> resultOrder =  Collections.synchronizedList(new ArrayList<OrderHis>(20000));
+	private List<Order> resultOrder =  Collections.synchronizedList(new ArrayList<Order>(20000));
 	
 	private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock(); 
 	
@@ -38,12 +37,12 @@ public class RechargeService {
 	
 	private final Lock r = rwl.readLock();
 	
-	private RechargeService() {
+	private RechargePool() {
 		
 	}
 	
-	public static RechargeService getRechargeService() {
-		return rechargeService;
+	public static RechargePool getInstance() {
+		return rechargePool;
 	}
 	
 	public int getIdlesseQueue() {
@@ -65,19 +64,19 @@ public class RechargeService {
 		}
 	}
 	
-	public void processResult(OrderHis orderHis) {
+	public void processResult(Order order) {
 		r.lock();
 		try{
-			log.info("记录订单历史到内存:"+orderHis.getFlowNo());
-			resultOrder.add(orderHis);
+			log.info("记录订单历史到内存:"+order.getFlowNo());
+			resultOrder.add(order);
 		}finally {
 			r.unlock();
 		}
 	}
 	
-	public List<OrderHis> getOrderHisList() {
+	public List<Order> getOrderHisList() {
 		w.lock();
-		List<OrderHis> tmpOrderHis = new ArrayList<OrderHis>();
+		List<Order> tmpOrderHis = new ArrayList<Order>();
 		try {
 			tmpOrderHis.addAll(resultOrder);
 			resultOrder.clear();

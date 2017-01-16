@@ -8,7 +8,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.thridrecharge.service.ordermanager.RechargeManager;
+import com.thridrecharge.service.ordermanager.callback.CallbackManager;
 
 public class RechargeListener implements ServletContextListener {
 
@@ -25,7 +25,7 @@ public class RechargeListener implements ServletContextListener {
 		WebApplicationContext springContext = WebApplicationContextUtils.getWebApplicationContext(context.getServletContext());
 		if(springContext != null){
 			RechargeContext.getRechargeContext().setAppContext(springContext);
-			final RechargeManager rechargeManager = (RechargeManager)springContext.getBean("rechargeManager");
+			final CallbackManager callbackManager = (CallbackManager)springContext.getBean("callbackManager");
 			
 			//启动充值任务
 			new Thread(new Runnable(){
@@ -33,7 +33,7 @@ public class RechargeListener implements ServletContextListener {
 				@Override
 				public void run() {
 					log.info("************************充值回调任务启动*******************");
-					rechargeManager.startRecharge();
+					callbackManager.startRecharge();
 					log.info("************************充值回调任务启动成功*******************");
 				}}).start();
 			

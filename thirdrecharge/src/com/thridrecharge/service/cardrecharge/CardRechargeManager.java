@@ -46,7 +46,7 @@ import com.sun.jna.win32.StdCallLibrary;
 import com.thridrecharge.service.RechargeException;
 import com.thridrecharge.service.entity.OrderHis;
 import com.thridrecharge.service.enums.ErrorCode;
-import com.thridrecharge.service.ordermanager.RechargeDao;
+import com.thridrecharge.service.ordermanager.recharge.RechargeDao;
 
 @Controller
 public class CardRechargeManager {

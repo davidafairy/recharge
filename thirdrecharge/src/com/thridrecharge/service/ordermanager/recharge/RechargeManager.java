@@ -1,4 +1,4 @@
-package com.thridrecharge.service.ordermanager;
+package com.thridrecharge.service.ordermanager.recharge;
 
 import java.util.List;
 
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Controller;
 
 import com.thridrecharge.service.cardrecharge.CardRechargeManager;
 import com.thridrecharge.service.entity.Order;
-import com.thridrecharge.service.entity.OrderHis;
+import com.thridrecharge.service.ordermanager.OrderDao;
 import com.thridrecharge.service.socketrecharge.AgentInterfaceManager;
 
 @Controller
@@ -36,25 +36,25 @@ public class RechargeManager {
 			try {
 				//处理内存中已经完成的订单
 				log.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-				List<OrderHis> orderHisList = RechargeService.getRechargeService().getOrderHisList();
-				log.info("@@@@@@@@@@@@@处理内存中已经回调完成的订单："+orderHisList.size());
-				for (OrderHis orderHis : orderHisList) {
+				List<Order> orderHisList = RechargePool.getInstance().getOrderHisList();
+				log.info("@@@@@@@@@@@@@处理内存中已经充值完成的订单："+orderHisList.size());
+				for (Order order : orderHisList) {
 //					if (orderHis.getResult() == 1) {
 //						log.info("@@@@@@@@@@@@@充值成功，进入扣款："+orderHis.getMobile());
 //						rechargeDao.deducting(orderHis.getAgentId(), orderHis.getMoney(),orderHis);
 //					}
-//					orderDao.saveOrderHis(orderHis);  不需要保存OrderHis了
-					orderDao.cleanOrderById(orderHis.getOrderId());
-					log.info("@@@@@@@@@@@@@处理内存中已经完成的订单（手机号："+orderHis.getMobile()+";订单号:"+orderHis.getFlowNo());
+					orderDao.saveOrder(order);  
+//					orderDao.cleanOrderById(orderHis.getOrderId());
+					log.info("@@@@@@@@@@@@@处理内存中已经完成的订单（手机号："+order.getMobile()+";订单号:"+order.getFlowNo());
 					
 				}
 				log.info("@@@@@@@@@@@@@内存中已经完成的订单保存成功");
 				
 				//加载新的订单
-				int idlesse = RechargeService.getRechargeService().getIdlesseQueue();
+				int idlesse = RechargePool.getInstance().getIdlesseQueue();
 				
-				log.info("@@@@@@@@@@@@@总队列数："+RechargeService.THREAD_QUEUE+";空闲队列数："+idlesse);
-				log.info("@@@@@@@@@@@@@线程池是否空闲："+RechargeService.getRechargeService().isStoped());
+				log.info("@@@@@@@@@@@@@总队列数："+RechargePool.THREAD_QUEUE+";空闲队列数："+idlesse);
+				log.info("@@@@@@@@@@@@@线程池是否空闲："+RechargePool.getInstance().isStoped());
 				if(idlesse > 0) {
 					log.info("@@@@@@@@@@@@@加载新的待处理订单");
 					List<Integer> agentIds = orderDao.getAgentIdList();
@@ -64,13 +64,13 @@ public class RechargeManager {
 							ids += String.valueOf(agentId)+",";
 						}
 						log.info("@@@@@@@@@@@@@符合条件代理商ID："+ids);
-						List<Order> orders = orderDao.getTopOrders(idlesse,agentIds);
-						log.info("@@@@@@@@@@@@@加载"+orders.size()+"条新的待处理订单");
+						List<Order> orders = orderDao.getCardRechargeOrders(idlesse,agentIds);
+						log.info("@@@@@@@@@@@@@加载"+orders.size()+"条新的待充值订单");
 						if (orders.size() > 0) {
-							RechargeService.getRechargeService().processRecharge(orders);
+							RechargePool.getInstance().processRecharge(orders);
 							
 						} else {
-							log.info("@@@@@@@@@@@@@没有查询到可回调订单，等待2秒");
+							log.info("@@@@@@@@@@@@@没有查询到可充值订单，等待2秒");
 							try {
 								Thread.currentThread().sleep(2000);
 							} catch (InterruptedException e) {

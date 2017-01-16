@@ -1,4 +1,4 @@
-package com.thridrecharge.service.ordermanager;
+package com.thridrecharge.service.ordermanager.recharge;
 
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -51,6 +51,19 @@ public class RechargeDao extends HibernateDaoSupport {
 		List<RechargeCard> areaCodes = (List<RechargeCard>)this.getHibernateTemplate().find(hql, cityCode,amount);
 		if (areaCodes.size() > 0) {
 			return areaCodes.get(0);
+		}
+		return null;
+	}
+	
+	//根据号码查询被占用的充值卡
+	public RechargeCard findOccupyCardByMobile(String mobile) {
+		String hql = "from RechargeCard where useState = 3 mobile = ?";
+		List<RechargeCard> areaCodes = (List<RechargeCard>)this.getHibernateTemplate().find(hql, mobile);
+		if (areaCodes.size() == 1) {
+			return areaCodes.get(0);
+		}
+		if (areaCodes.size() > 1) {
+			log.error("同一个号码占用了多张充值卡:mobile=="+mobile);
 		}
 		return null;
 	}

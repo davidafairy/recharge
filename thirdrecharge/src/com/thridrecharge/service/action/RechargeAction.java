@@ -22,10 +22,13 @@ import org.springframework.stereotype.Controller;
 import com.opensymphony.xwork2.ActionSupport;
 import com.thridrecharge.service.RechargeException;
 import com.thridrecharge.service.entity.Agent;
+import com.thridrecharge.service.entity.AreaCode;
 import com.thridrecharge.service.entity.Order;
 import com.thridrecharge.service.enums.ErrorCode;
 import com.thridrecharge.service.memory.AgentMemory;
+import com.thridrecharge.service.memory.AreaCodeMemory;
 import com.thridrecharge.service.ordermanager.OrderManager;
+import com.thridrecharge.service.ordermanager.recharge.RechargeDao;
 import com.thridrecharge.service.socketrecharge.AgentInterfaceManager;
 import com.thridrecharge.service.utils.MD5Utils;
 
@@ -40,6 +43,9 @@ public class RechargeAction extends ActionSupport {
 	
 	@Autowired
 	private OrderManager orderManager;
+	
+	@Autowired
+	private RechargeDao rechargeDao;
 	
 	public String agentName;
 	public String flowNo;
@@ -134,7 +140,12 @@ public class RechargeAction extends ActionSupport {
 					order.setChannel(1); //线下充值
 				} 
 			}
-			
+			//卡密充值渠道
+			String areaCodeDesc = AreaCodeMemory.getAreaCodeMemeory().getAgentCode(order.getMobile());
+			AreaCode areaCode = rechargeDao.getAreaCode(areaCodeDesc);
+			if (areaCode.getRechargeStrategy() == 3) {
+				order.setChannel(3); //卡密充值
+			}
 			
 			//9.记录订单
 			log.info("========开始记录订单：phoneNo【"+phoneNo+"】，money【"+money+"】========");

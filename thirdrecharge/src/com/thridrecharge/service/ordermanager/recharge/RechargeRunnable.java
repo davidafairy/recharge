@@ -1,8 +1,7 @@
-package com.thridrecharge.service.ordermanager;
+package com.thridrecharge.service.ordermanager.recharge;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -19,21 +18,16 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
-import com.thridrecharge.service.RechargeContext;
+import com.ofpay.util.encoding.AES;
 import com.thridrecharge.service.RechargeException;
-import com.thridrecharge.service.cardrecharge.CardRechargeManager;
 import com.thridrecharge.service.entity.Agent;
 import com.thridrecharge.service.entity.AreaCode;
-import com.thridrecharge.service.entity.DealRecord;
 import com.thridrecharge.service.entity.Order;
-import com.thridrecharge.service.entity.OrderHis;
 import com.thridrecharge.service.entity.RechargeCard;
-import com.thridrecharge.service.entity.ShopNo;
-import com.thridrecharge.service.enums.ErrorCode;
-import com.thridrecharge.service.enums.RechargeStrategy;
+import com.thridrecharge.service.enums.RechargeCardStatus;
 import com.thridrecharge.service.memory.AgentMemory;
 import com.thridrecharge.service.memory.AreaCodeMemory;
-import com.thridrecharge.service.socketrecharge.AgentInterfaceManager;
+import com.thridrecharge.service.ordermanager.OrderDao;
 import com.thridrecharge.service.utils.MD5Utils;
 
 public class RechargeRunnable implements Runnable {
@@ -42,9 +36,9 @@ public class RechargeRunnable implements Runnable {
 	
 	private Order order;
 	
-//	private RechargeDao rechargeDao;
+	private RechargeDao rechargeDao;
 //	
-//	private OrderDao orderDao;
+	private OrderDao orderDao;
 	
 	public RechargeRunnable(Order order) {
 		this.order = order;
@@ -56,7 +50,7 @@ public class RechargeRunnable implements Runnable {
 	@Override
 	public void run() {
 		log.info("=======================================================================================================================================");
-		log.info("=========================================开始回调(手机号："+order.getMobile()+")===========================================================");
+		log.info("=========================================开始卡密充值(手机号："+order.getMobile()+")===========================================================");
 		log.info("=======================================================================================================================================");
 		log.info("********代理商  ：【"+order.getAgentId()+"】");
 		log.info("********订单号  ：【"+order.getFlowNo()+"】");
@@ -64,7 +58,7 @@ public class RechargeRunnable implements Runnable {
 		log.info("********充值金额：【"+order.getMoney()+"】");
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 		log.info("********订单时间：【"+sdf.format(order.getCreateTime())+"】");
-		log.info("********回调开始时间：【"+sdf.format(Calendar.getInstance().getTime())+"】");
+		log.info("********卡密充值开始时间：【"+sdf.format(Calendar.getInstance().getTime())+"】");
 		
 		
 		
@@ -73,21 +67,21 @@ public class RechargeRunnable implements Runnable {
 //		log.info("********充值策略：【"+RechargeStrategy.getStrategyDesc(areaCode.getRechargeStrategy())+"】");
 		
 		//充值历史
-		OrderHis orderHis = new OrderHis();
-		orderHis.setAgentId(order.getAgentId());
-		orderHis.setFlowNo(order.getFlowNo());
-		orderHis.setMobile(order.getMobile());
-		orderHis.setMoney(order.getMoney());
-		orderHis.setCreateTime(order.getCreateTime());
-		orderHis.setOrderId(order.getId());
-		orderHis.setRechargeTime(order.getRechargeTime());
-		orderHis.setResult(order.getDealResult());
-		if (order.getDealResult() == 1) {
-			orderHis.setErrorCode(ErrorCode.SUCCESS.getErrorCode());
-		} else {
-			orderHis.setErrorCode(ErrorCode.RECHARGEFAIL.getErrorCode());
-			
-		}
+//		OrderHis orderHis = new OrderHis();
+//		orderHis.setAgentId(order.getAgentId());
+//		orderHis.setFlowNo(order.getFlowNo());
+//		orderHis.setMobile(order.getMobile());
+//		orderHis.setMoney(order.getMoney());
+//		orderHis.setCreateTime(order.getCreateTime());
+//		orderHis.setOrderId(order.getId());
+//		orderHis.setRechargeTime(order.getRechargeTime());
+//		orderHis.setResult(order.getDealResult());
+//		if (order.getDealResult() == 1) {
+//			orderHis.setErrorCode(ErrorCode.SUCCESS.getErrorCode());
+//		} else {
+//			orderHis.setErrorCode(ErrorCode.RECHARGEFAIL.getErrorCode());
+//			
+//		}
 		
 //		// 检查是否重单
 //		OrderHis repeatOrder = orderDao.findOrderHisByFlowNo(order.getFlowNo());
@@ -196,26 +190,24 @@ public class RechargeRunnable implements Runnable {
 //			}
 //		}
 		
-		boolean callbackResult = false;
-		for (int i=0;i<3;i++) {  //最多重试3次
-			callbackResult = callback(orderHis);
-			if (callbackResult) {
-				break;
-			}
-		}
+		boolean rechargeResult = cardRecharge(order);
 		
-		if (callbackResult) {
-			orderHis.setCallback(1); //回调成功
+		if (rechargeResult) {
+			order.setStatus(4); //充值卡下单成功
+			order.setDealResult(1);  //充值成功
+			order.setRechargeTime(Calendar.getInstance().getTime());
 		} else {
-			orderHis.setCallback(2); //回调失败
+			order.setStatus(3); //充值完成  ---如果下单失败的话，则直接充值完成
+			order.setDealResult(2);  //充值失败
+			order.setRechargeTime(Calendar.getInstance().getTime());
 		}
 		/////////////////////////////////////////////////////测试用，测试完需要恢复上面代码
 //		orderHis.setCallback(1);
 		//记录已充值订单历史
-		RechargeService.getRechargeService().processResult(orderHis);
-//		orderDao.saveOrderHis(orderHis);
+		RechargePool.getInstance().processResult(order);
+//		orderDao.saveOrder(order);
 		
-		log.info("********充值完成时间：【"+sdf.format(orderHis.getRechargeTime())+"】");
+		log.info("********充值完成时间：【"+sdf.format(order.getRechargeTime())+"】");
 	}
 	
 	/**
@@ -313,46 +305,61 @@ public class RechargeRunnable implements Runnable {
 //		
 //	}
 	
-	private boolean callback(OrderHis orderHis) {
-		AgentMemory agentMemory = AgentMemory.getAgentMemory();
-		Agent agent = agentMemory.getAgent(orderHis.getAgentId());
-		String callback = agent.getCallback();
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
-		String callbackParam = "userid=" + agent.getLoginName() + "&orderid=" + orderHis.getOrderId() + "&sporderid=" + orderHis.getFlowNo()
-				+ "&merchantsubmittime=" + sdf.format(orderHis.getRechargeTime()) + "&result=" + orderHis.getErrorCode();
-		
-		String sign = MD5Utils.encodeByMD5(callbackParam+"&key=Abcd1234");
-		callback = callback + "?" + callbackParam + "&sign="+sign;
-		
-		//回调
-		HttpParams params=new BasicHttpParams();
-		ConnManagerParams.setMaxTotalConnections(params, 50);
-		ThreadSafeClientConnManager tsccm=new ThreadSafeClientConnManager();
-		tsccm.setMaxTotal(50);
-		DefaultHttpClient httpClient=new DefaultHttpClient(tsccm,params);
-		
-		httpClient.getParams().setParameter("http.protocol.content-charset",HTTP.UTF_8);
-		httpClient.getParams().setParameter(HTTP.CONTENT_ENCODING, HTTP.UTF_8);
-		httpClient.getParams().setParameter(HTTP.CHARSET_PARAM, HTTP.UTF_8);
-		httpClient.getParams().setParameter(HTTP.DEFAULT_PROTOCOL_CHARSET,HTTP.UTF_8);
-		HttpClientParams.setCookiePolicy(httpClient.getParams(), CookiePolicy.BROWSER_COMPATIBILITY);
-		HttpGet callbackGet = new HttpGet(callback);
-		log.info("********回调地址："+callback);
+	private boolean cardRecharge(Order order) {
 		try {
-			HttpResponse response = httpClient.execute(callbackGet);
+			
+			AgentMemory agentMemory = AgentMemory.getAgentMemory();
+			Agent agent = agentMemory.getAgent(order.getAgentId());
+			String rechargeUrl = "http://api2.ofpay.com/recharge/rechargeorder.do";
+			
+			String areaCodeDesc = AreaCodeMemory.getAreaCodeMemeory().getAgentCode(order.getMobile());
+			AreaCode areaCode = rechargeDao.getAreaCode(areaCodeDesc);
+			RechargeCard rechargeCard = rechargeDao.getRechargeCard(areaCode.getCityCode(),order.getMoney());
+			
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+			String rechargeParam = "userid=A1404230&cardno=" + rechargeCard.getCardNo() + "&cardpass=" + rechargeCard.getCardPwd() + "&chargeno=" +order.getMobile()
+								+ "&parvalue="+order.getMoney() / 100 + "&sporderid=" + order.getFlowNo() + "&mobilenotype=1&";
+			
+			String sKey = MD5Utils.encodeByMD5(rechargeParam+"&key=Abcd1234");
+			sKey = sKey.substring(0,16);
+			String sign = AES.encrypt(rechargeParam, sKey, "0102030405060708");
+			rechargeUrl = rechargeUrl + "?" + rechargeParam + "&cardid=1231601&mobilenotype=1&md5str="+sign+"&returl=http://58.240.17.142:28080/recharge/cardRechargeCallback.do"+"&noticenumber=";
+			
+			//回调
+			HttpParams params=new BasicHttpParams();
+			ConnManagerParams.setMaxTotalConnections(params, 50);
+			ThreadSafeClientConnManager tsccm=new ThreadSafeClientConnManager();
+			tsccm.setMaxTotal(50);
+			DefaultHttpClient httpClient=new DefaultHttpClient(tsccm,params);
+			
+			httpClient.getParams().setParameter("http.protocol.content-charset",HTTP.UTF_8);
+			httpClient.getParams().setParameter(HTTP.CONTENT_ENCODING, HTTP.UTF_8);
+			httpClient.getParams().setParameter(HTTP.CHARSET_PARAM, HTTP.UTF_8);
+			httpClient.getParams().setParameter(HTTP.DEFAULT_PROTOCOL_CHARSET,HTTP.UTF_8);
+			HttpClientParams.setCookiePolicy(httpClient.getParams(), CookiePolicy.BROWSER_COMPATIBILITY);
+			HttpGet rechargeGet = new HttpGet(rechargeUrl);
+			log.info("********卡密充值地址："+rechargeUrl);
+		
+			HttpResponse response = httpClient.execute(rechargeGet);
 			if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 				String resultStr = EntityUtils.toString(response.getEntity()); 
-				log.info("********回调返回结果："+resultStr);
-				if ("success".equalsIgnoreCase(resultStr)) {
-					log.info("********回调地址成功");
+				log.info("********卡密充值订单下发返回结果："+resultStr);
+				if ("<retcode>1</retcode>".equalsIgnoreCase(resultStr)) {
+					log.info("********卡密充值订单下发成功");
+					
+					//修改充值卡状态
+					rechargeCard.setUseState(RechargeCardStatus.OCCUPY.intValue()); //预占
+					rechargeCard.setUseTime(Calendar.getInstance().getTime());
+					rechargeCard.setMobile(order.getMobile());
+					rechargeDao.updateRechargeCard(rechargeCard);
 					return true;
 				} 
 			} 
-			log.info("********回调地址失败："+response.getStatusLine().getStatusCode());
+			log.info("********卡密充值订单下发失败："+response.getStatusLine().getStatusCode());
 			return false;
 			
 		} catch (Exception e) {
-			log.info("********回调地址失败：");
+			log.info("********卡密充值订单下发失败：");
 			log.error(e);
 			return false;
 		}

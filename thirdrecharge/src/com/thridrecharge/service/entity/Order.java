@@ -47,7 +47,7 @@ public class Order {
 	@Column(name="RECHARGE_TIME")
 	private Date rechargeTime;
 
-	//加载状态。1：未加载内存；2：已加载内存
+	//加载状态。1：未加载内存；2：已加载内存；3:已充值完成
 	private int status = 1;
 	
 	//充值结果，默认为0，1：充值成功；2充值失败
