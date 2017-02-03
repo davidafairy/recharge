@@ -53,7 +53,7 @@ public class RechargeDao extends HibernateDaoSupport {
 		return cardList.size();
 	}
 	
-	public RechargeCard getRechargeCard(long amount) {
+	public synchronized RechargeCard getRechargeCard(long amount) {
 		String hql = "from RechargeCard where amount = ? and usestate = 1";
 		List<RechargeCard> cardList = (List<RechargeCard>)this.getHibernateTemplate().find(hql, amount);
 		if (cardList.size() > 0) {
