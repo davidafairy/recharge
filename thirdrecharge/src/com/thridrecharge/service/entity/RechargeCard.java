@@ -47,6 +47,9 @@ public class RechargeCard {
 	private Date useTime;
 	
 	private String mobile;
+	
+	//使用该卡的订单号（手机号码可能会重复）
+	private String flowNo;
 
 	public int getId() {
 		return id;
@@ -119,5 +122,14 @@ public class RechargeCard {
 	public void setMobile(String mobile) {
 		this.mobile = mobile;
 	}
+
+	public String getFlowNo() {
+		return flowNo;
+	}
+
+	public void setFlowNo(String flowNo) {
+		this.flowNo = flowNo;
+	}
+	
 	
 }

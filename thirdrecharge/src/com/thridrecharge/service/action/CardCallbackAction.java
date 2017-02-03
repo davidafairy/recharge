@@ -58,52 +58,61 @@ public class CardCallbackAction extends ActionSupport {
 	 */
 	@Action(value = "cardRechargeCallback")
 	public void recharge() {
-		log.info("==============================接收充值卡回调请求：============================");
-		log.info("========userid【"+userid+"】");
-		log.info("========ret_code【"+ret_code+"】");
-		log.info("========sporder_id【"+sporder_id+"】");
-		log.info("========ordersuccesstime【"+ordersuccesstime+"】");
-		log.info("========parvalue【"+parvalue+"】");
-		log.info("========sign【"+sign+"】");
 		
-		String sKey = MD5Utils.encodeByMD5(userid+ret_code+sporder_id+"Abcd1234");
-		if (sKey.equalsIgnoreCase(sign)) {
+		try {
+			log.info("==============================接收充值卡回调请求：============================");
+			log.info("========userid【"+userid+"】");
+			log.info("========ret_code【"+ret_code+"】");
+			log.info("========sporder_id【"+sporder_id+"】");
+			log.info("========ordersuccesstime【"+ordersuccesstime+"】");
+			log.info("========parvalue【"+parvalue+"】");
+			log.info("========rechargeinfo【"+rechargeinfo+"】");
+			log.info("========sign【"+sign+"】");
 			
-			Order order = orderDao.findOrderByFlowNo(sporder_id);
-			RechargeCard rechargeCard = rechargeDao.findOccupyCardByMobile(order.getMobile());
-			
-			order.setStatus(3);  //充值完成
-			
-			//充值成功
-			if ("2000".equals(rechargeinfo) ||
-					"2001".equals(rechargeinfo)||
-					"2003".equals(rechargeinfo)) {
+			String sKey = MD5Utils.encodeByMD5(userid+ret_code+sporder_id+"Abcd1234");
+			log.info("========sKey【"+sKey+"】");
+			if (sKey.equalsIgnoreCase(sign)) {
 				
-				order.setDealResult(DealResult.SUCCESS.intValue()); //充值成功
-				rechargeCard.setUseState(RechargeCardStatus.USED.intValue()); //已使用
-			} else {
-				order.setDealResult(DealResult.FAULT.intValue()); //充值失败
+				Order order = orderDao.findOrderByFlowNo(sporder_id);
+				RechargeCard rechargeCard = rechargeDao.findOccupyCardByFlowNo(order.getFlowNo());
 				
-				//卡密异常
-				if ("3001".equals(rechargeinfo) ||
-						"3002".equals(rechargeinfo)||
-						"3003".equals(rechargeinfo)) {
-					rechargeCard.setUseState(RechargeCardStatus.ERROR.intValue()); //卡密不可用
+				order.setRechargeTime(Calendar.getInstance().getTime());
+				
+				//充值成功
+				if ("2000".equals(rechargeinfo) ||
+						"2001".equals(rechargeinfo)||
+						"2003".equals(rechargeinfo)) {
+					
+					order.setDealResult(DealResult.SUCCESS.intValue()); //充值成功
+					rechargeCard.setUseState(RechargeCardStatus.USED.intValue()); //已使用
 				} else {
-					rechargeCard.setUseState(RechargeCardStatus.UNUSE.intValue()); //未使用
+					order.setDealResult(DealResult.FAULT.intValue()); //充值失败
+					
+					//卡密异常
+					if ("3001".equals(rechargeinfo) ||
+							"3002".equals(rechargeinfo)||
+							"3003".equals(rechargeinfo)) {
+						rechargeCard.setUseState(RechargeCardStatus.ERROR.intValue()); //卡密不可用
+					} else {
+						rechargeCard.setUseState(RechargeCardStatus.UNUSE.intValue()); //未使用
+					}
+					
 				}
 				
+				
+				//修改充值卡状态
+				rechargeDao.updateRechargeCard(rechargeCard);
+				
+				//修改订单状态
+				orderDao.saveOrder(order);
+				
+				log.info("========订单回调保存成功，FlowNo【"+sporder_id+"】");
 			}
-			
-			
-			//修改充值卡状态
-			rechargeDao.updateRechargeCard(rechargeCard);
-			
-			//修改订单状态
-			orderDao.saveOrder(order);
-			
-			log.info("========订单回调保存成功，FlowNo【"+sporder_id+"】");
+		} catch (Exception e) {
+			e.printStackTrace();
+			log.error("callback error:", e);
 		}
+		
 			
 			
 			
@@ -231,5 +240,9 @@ public class CardCallbackAction extends ActionSupport {
 		this.sign = sign;
 	}
 
+	public static void main(String[] args) {
+		String sKey = MD5Utils.encodeByMD5("A14042301CHs012013218888000Abcd1234");
+		System.out.println(sKey.equalsIgnoreCase("44E1BE566D9C37B6E4940BB433138559"));
+	}
 	
 }

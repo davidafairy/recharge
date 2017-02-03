@@ -15,7 +15,7 @@
 	</appender>
 
 	<appender name="RECHARGE_FILE" class="org.apache.log4j.DailyRollingFileAppender">
-		<param name="File" value="logs/recharge.log" />
+		<param name="File" value="e:/logs/recharge/recharge.log" />
 		<param name="append" value="true" />
 		<param name="DatePattern" value="'.'yyyy-MM-dd" />
 		<layout class="org.apache.log4j.PatternLayout">
@@ -24,7 +24,16 @@
 	</appender>
 	
 	<appender name="ORDER_FILE" class="org.apache.log4j.DailyRollingFileAppender">
-		<param name="File" value="logs/order.log" />
+		<param name="File" value="e:/logs/order/order.log" />
+		<param name="append" value="true" />
+		<param name="DatePattern" value="'.'yyyy-MM-dd" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d -%l [%t] %-5p %x - %m%n" />
+		</layout>
+	</appender>
+	
+	<appender name="CALLBACK_FILE" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="e:/logs/callback/callback.log" />
 		<param name="append" value="true" />
 		<param name="DatePattern" value="'.'yyyy-MM-dd" />
 		<layout class="org.apache.log4j.PatternLayout">
@@ -33,7 +42,7 @@
 	</appender>
 	
 	<appender name="SYSTEM_FILE" class="org.apache.log4j.DailyRollingFileAppender">
-		<param name="File" value="logs/system.log" />
+		<param name="File" value="e:/logs/system/system.log" />
 		<param name="append" value="true" />
 		<param name="DatePattern" value="'.'yyyy-MM-dd" />
 		<layout class="org.apache.log4j.PatternLayout">
@@ -52,6 +61,12 @@
 		<level value="info" />
 		<appender-ref ref="CONSOLE" />
 		<appender-ref ref="RECHARGE_FILE" />
+	</logger>
+	
+	<logger name="callback" additivity="false">
+		<level value="info" />
+		<appender-ref ref="CONSOLE" />
+		<appender-ref ref="CALLBACK_FILE" />
 	</logger>
 	
 	<logger name="com.thridrecharge" additivity="false">

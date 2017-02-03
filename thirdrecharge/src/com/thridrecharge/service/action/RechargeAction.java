@@ -24,6 +24,7 @@ import com.thridrecharge.service.RechargeException;
 import com.thridrecharge.service.entity.Agent;
 import com.thridrecharge.service.entity.AreaCode;
 import com.thridrecharge.service.entity.Order;
+import com.thridrecharge.service.entity.RechargeCard;
 import com.thridrecharge.service.enums.ErrorCode;
 import com.thridrecharge.service.enums.OrderChannel;
 import com.thridrecharge.service.memory.AgentMemory;
@@ -145,7 +146,12 @@ public class RechargeAction extends ActionSupport {
 			String areaCodeDesc = AreaCodeMemory.getAreaCodeMemeory().getAgentCode(order.getMobile());
 			AreaCode areaCode = rechargeDao.getAreaCode(areaCodeDesc);
 			if (areaCode.getRechargeStrategy() == 3) {
-				order.setChannel(OrderChannel.RECHARGECARD.intValue()); //卡密充值
+				//检查充值卡数量，如果有充值卡，则用充值卡充，否则走接口
+				int unUsedCardNum = rechargeDao.findUnUsedCardNum(order.getMoney());
+				if (unUsedCardNum > 0) {
+					order.setChannel(OrderChannel.RECHARGECARD.intValue()); //卡密充值
+				}
+				
 			}
 			
 			//9.记录订单

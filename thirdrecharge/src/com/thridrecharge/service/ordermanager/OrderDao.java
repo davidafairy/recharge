@@ -18,6 +18,8 @@ import org.springframework.stereotype.Repository;
 import com.thridrecharge.service.entity.Agent;
 import com.thridrecharge.service.entity.Order;
 import com.thridrecharge.service.entity.OrderHis;
+import com.thridrecharge.service.enums.OrderChannel;
+import com.thridrecharge.service.enums.OrderStatus;
 
 @Repository
 public class OrderDao extends HibernateDaoSupport {
@@ -80,13 +82,13 @@ public class OrderDao extends HibernateDaoSupport {
 				//排序方法
 				crit.addOrder(org.hibernate.criterion.Order.asc("id"));
 				crit.add(Property.forName("agentId").in(agentIds));
-				crit.add(Restrictions.eq("status",3));   //查询充值已完成的
+				crit.add(Restrictions.eq("status",OrderStatus.SUCCESS.intValue()));   //查询充值已完成的
 				//分页
 				crit.setMaxResults(num);
 				List list = crit.list();
 				for (int i=0;i<list.size();i++) {
 					Order order = (Order)list.get(i);
-					order.setStatus(4);  //回调中
+					order.setStatus(OrderStatus.CALLBACK.intValue());  //回调中
 				}
 				return list;
 			}
@@ -106,14 +108,14 @@ public class OrderDao extends HibernateDaoSupport {
 				//排序方法
 				crit.addOrder(org.hibernate.criterion.Order.asc("id"));
 				crit.add(Property.forName("agentId").in(agentIds));
-				crit.add(Restrictions.eq("status",1));   //查询待充值
-				crit.add(Restrictions.eq("channel",3));   //渠道3表示充值卡充值
+				crit.add(Restrictions.eq("status",OrderStatus.RECEIVE.intValue()));   //查询待充值
+				crit.add(Restrictions.eq("channel",OrderChannel.RECHARGECARD.intValue()));   //渠道3表示充值卡充值
 				//分页
 				crit.setMaxResults(num);
 				List list = crit.list();
 				for (int i=0;i<list.size();i++) {
 					Order order = (Order)list.get(i);
-					order.setStatus(2);  //充值中
+					order.setStatus(OrderStatus.RECHARGEING.intValue());  //充值中
 				}
 				return list;
 			}

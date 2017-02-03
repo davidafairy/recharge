@@ -1,29 +1,45 @@
 package com.thridrecharge.service.ordermanager.recharge;
 
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.conn.params.ConnManagerParams;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
+import org.apache.log4j.chainsaw.Main;
 
 import com.ofpay.util.encoding.AES;
+import com.thridrecharge.service.RechargeContext;
 import com.thridrecharge.service.RechargeException;
 import com.thridrecharge.service.entity.Agent;
 import com.thridrecharge.service.entity.AreaCode;
 import com.thridrecharge.service.entity.Order;
 import com.thridrecharge.service.entity.RechargeCard;
+import com.thridrecharge.service.enums.DealResult;
 import com.thridrecharge.service.enums.RechargeCardStatus;
 import com.thridrecharge.service.memory.AgentMemory;
 import com.thridrecharge.service.memory.AreaCodeMemory;
@@ -43,7 +59,7 @@ public class RechargeRunnable implements Runnable {
 	public RechargeRunnable(Order order) {
 		this.order = order;
 		
-//		rechargeDao = RechargeContext.getRechargeContext().getBean("rechargeDao");
+		rechargeDao = RechargeContext.getRechargeContext().getBean("rechargeDao");
 //		orderDao = RechargeContext.getRechargeContext().getBean("orderDao");
 	}
 	
@@ -192,15 +208,12 @@ public class RechargeRunnable implements Runnable {
 		
 		boolean rechargeResult = cardRecharge(order);
 		
-		if (rechargeResult) {
-			order.setStatus(4); //充值卡下单成功
-			order.setDealResult(1);  //充值成功
-			order.setRechargeTime(Calendar.getInstance().getTime());
-		} else {
-			order.setStatus(3); //充值完成  ---如果下单失败的话，则直接充值完成
+		//如果充值失败，则记录充值时间，朱凡那边会根据充值时间写历史表
+		//如果充值成功，则什么都不变，等待回调
+		if (!rechargeResult) {
 			order.setDealResult(2);  //充值失败
 			order.setRechargeTime(Calendar.getInstance().getTime());
-		}
+		} 
 		/////////////////////////////////////////////////////测试用，测试完需要恢复上面代码
 //		orderHis.setCallback(1);
 		//记录已充值订单历史
@@ -312,18 +325,26 @@ public class RechargeRunnable implements Runnable {
 			Agent agent = agentMemory.getAgent(order.getAgentId());
 			String rechargeUrl = "http://api2.ofpay.com/recharge/rechargeorder.do";
 			
-			String areaCodeDesc = AreaCodeMemory.getAreaCodeMemeory().getAgentCode(order.getMobile());
-			AreaCode areaCode = rechargeDao.getAreaCode(areaCodeDesc);
-			RechargeCard rechargeCard = rechargeDao.getRechargeCard(areaCode.getCityCode(),order.getMoney());
+//			String areaCodeDesc = AreaCodeMemory.getAreaCodeMemeory().getAgentCode(order.getMobile());
+//			AreaCode areaCode = rechargeDao.getAreaCode(areaCodeDesc);
+			RechargeCard rechargeCard = rechargeDao.getRechargeCard(order.getMoney());
 			
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
-			String rechargeParam = "userid=A1404230&cardno=" + rechargeCard.getCardNo() + "&cardpass=" + rechargeCard.getCardPwd() + "&chargeno=" +order.getMobile()
-								+ "&parvalue="+order.getMoney() / 100 + "&sporderid=" + order.getFlowNo() + "&mobilenotype=1&";
+			if (null == rechargeCard) {
+				return false;
+			}
+			//AES加密key 假设商户约定密钥为SSS0JKEU9TR7H244ORNMU94MQ6HXDDDD
+	        String key = MD5Utils.encodeByMD5("Abcd1234").substring(0, 16).toLowerCase();
+	        
+			//加密cardno
+	        String sCardNo = AES.encrypt(rechargeCard.getCardNo(), key, "0102030405060708");
+	        
+	        //加密cardpass
+	        String sCardpass = AES.encrypt(rechargeCard.getCardPwd(), key, "0102030405060708");
 			
-			String sKey = MD5Utils.encodeByMD5(rechargeParam+"&key=Abcd1234");
-			sKey = sKey.substring(0,16);
-			String sign = AES.encrypt(rechargeParam, sKey, "0102030405060708");
-			rechargeUrl = rechargeUrl + "?" + rechargeParam + "&cardid=1231601&mobilenotype=1&md5str="+sign+"&returl=http://58.240.17.142:28080/recharge/cardRechargeCallback.do"+"&noticenumber=";
+	        //加密md5str
+			String md5Source = "A1404230" + rechargeCard.getCardNo() + rechargeCard.getCardPwd() + order.getMobile() +order.getMoney() / 100 + order.getFlowNo()+"Abcd1234";
+			
+			String sign = MD5Utils.encodeByMD5(md5Source).toUpperCase();
 			
 			//回调
 			HttpParams params=new BasicHttpParams();
@@ -337,30 +358,64 @@ public class RechargeRunnable implements Runnable {
 			httpClient.getParams().setParameter(HTTP.CHARSET_PARAM, HTTP.UTF_8);
 			httpClient.getParams().setParameter(HTTP.DEFAULT_PROTOCOL_CHARSET,HTTP.UTF_8);
 			HttpClientParams.setCookiePolicy(httpClient.getParams(), CookiePolicy.BROWSER_COMPATIBILITY);
-			HttpGet rechargeGet = new HttpGet(rechargeUrl);
-			log.info("********卡密充值地址："+rechargeUrl);
+			HttpPost rechargePost = new HttpPost(rechargeUrl);
+			
 		
-			HttpResponse response = httpClient.execute(rechargeGet);
+			List<NameValuePair> nvps = new ArrayList<NameValuePair>(); 
+			nvps.add(new BasicNameValuePair("userid", "A1404230"));  
+			nvps.add(new BasicNameValuePair("cardno", sCardNo)); 
+			nvps.add(new BasicNameValuePair("cardpass", sCardpass));
+			nvps.add(new BasicNameValuePair("chargeno", order.getMobile()));
+			nvps.add(new BasicNameValuePair("parvalue", String.valueOf(order.getMoney() / 100)));
+			nvps.add(new BasicNameValuePair("sporderid", order.getFlowNo()));
+			nvps.add(new BasicNameValuePair("mobilenotype", "1"));
+			nvps.add(new BasicNameValuePair("cardid", "1231601"));
+			nvps.add(new BasicNameValuePair("md5str", sign));
+			nvps.add(new BasicNameValuePair("returl", "http://58.240.17.142:8080/recharge/cardRechargeCallback.do"));
+			nvps.add(new BasicNameValuePair("noticenumber", ""));
+			
+			log.info("********卡密充值请求参数==>userid："+"A1404230");
+			log.info("********卡密充值请求参数==>cardno："+rechargeCard.getCardNo()+";sCardno:"+sCardNo);
+			log.info("********卡密充值请求参数==>cardpass："+rechargeCard.getCardPwd()+";sCardpass:"+sCardpass);
+			log.info("********卡密充值请求参数==>chargeno："+order.getMobile());
+			log.info("********卡密充值请求参数==>parvalue："+String.valueOf(order.getMoney() / 100));
+			log.info("********卡密充值请求参数==>sporderid："+order.getFlowNo());
+			log.info("********卡密充值请求参数==>mobilenotype："+"1");
+			log.info("********卡密充值请求参数==>cardid："+"1231601");
+			log.info("********卡密充值请求参数==>md5str："+sign);
+			log.info("********卡密充值请求参数==>returl："+"http://58.240.17.142:8080/recharge/cardRechargeCallback.do");
+			log.info("********卡密充值请求参数==>noticenumber："+"");
+			
+			
+			rechargePost.setEntity(new UrlEncodedFormEntity(nvps));
+			HttpResponse response = httpClient.execute(rechargePost);
 			if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 				String resultStr = EntityUtils.toString(response.getEntity()); 
 				log.info("********卡密充值订单下发返回结果："+resultStr);
-				if ("<retcode>1</retcode>".equalsIgnoreCase(resultStr)) {
+				if (resultStr.contains("<retcode>1</retcode>")) {
 					log.info("********卡密充值订单下发成功");
 					
 					//修改充值卡状态
-					rechargeCard.setUseState(RechargeCardStatus.OCCUPY.intValue()); //预占
 					rechargeCard.setUseTime(Calendar.getInstance().getTime());
 					rechargeCard.setMobile(order.getMobile());
+					rechargeCard.setCityCode(order.getMobile());  //cityCode字段已经不用了，为了后台展示，把手机号码也放到这个字段里面来
+					rechargeCard.setFlowNo(order.getFlowNo());
 					rechargeDao.updateRechargeCard(rechargeCard);
 					return true;
 				} 
 			} 
+			
+			//修改充值卡状态
+			rechargeCard.setUseState(RechargeCardStatus.UNUSE.intValue()); //失败就改成未使用
+			rechargeDao.updateRechargeCard(rechargeCard);
+			
 			log.info("********卡密充值订单下发失败："+response.getStatusLine().getStatusCode());
 			return false;
 			
 		} catch (Exception e) {
 			log.info("********卡密充值订单下发失败：");
-			log.error(e);
+			e.printStackTrace();
+			log.error("exception:",e);
 			return false;
 		}
 		
@@ -377,5 +432,21 @@ public class RechargeRunnable implements Runnable {
 //			return "300";
 //		}
 //	}
+	
+	public static void main(String[] args) {
+		
+        
+		//加密cardno
+        try {
+        	String tmp = "A1404230341601073199500340215873335668960713218888000"+50 + "CHt011913218888000";
+        	String key = MD5Utils.encodeByMD5(tmp).toUpperCase();
+			 System.out.print(key);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
+       
+	}
 
 }

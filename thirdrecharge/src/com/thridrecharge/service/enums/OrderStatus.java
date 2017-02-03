@@ -9,7 +9,10 @@ public enum OrderStatus {
 	RECHARGEING(2),
 	
 	//充值成功
-	SUCCESS(3);
+	SUCCESS(3),
+	
+	//回调中
+	CALLBACK(4);
 	
 	private int status;
 	

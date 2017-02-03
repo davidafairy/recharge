@@ -24,6 +24,7 @@ import com.thridrecharge.service.entity.DealRecord;
 import com.thridrecharge.service.entity.OrderHis;
 import com.thridrecharge.service.entity.RechargeCard;
 import com.thridrecharge.service.enums.ErrorCode;
+import com.thridrecharge.service.enums.RechargeCardStatus;
 import com.thridrecharge.service.memory.AgentMemory;
 
 @Repository
@@ -46,24 +47,34 @@ public class RechargeDao extends HibernateDaoSupport {
 		return null;
 	}
 	
-	public RechargeCard getRechargeCard(String cityCode,long amount) {
-		String hql = "from RechargeCard where cityCode = ? and amount = ? and usestate = 1";
-		List<RechargeCard> areaCodes = (List<RechargeCard>)this.getHibernateTemplate().find(hql, cityCode,amount);
-		if (areaCodes.size() > 0) {
-			return areaCodes.get(0);
+	public int findUnUsedCardNum(long amount) {
+		String hql = "from RechargeCard where amount = ? and usestate = 1";
+		List<RechargeCard> cardList = (List<RechargeCard>)this.getHibernateTemplate().find(hql, amount);
+		return cardList.size();
+	}
+	
+	public RechargeCard getRechargeCard(long amount) {
+		String hql = "from RechargeCard where amount = ? and usestate = 1";
+		List<RechargeCard> cardList = (List<RechargeCard>)this.getHibernateTemplate().find(hql, amount);
+		if (cardList.size() > 0) {
+			RechargeCard rechargeCard = cardList.get(0);
+			
+			rechargeCard.setUseState(RechargeCardStatus.OCCUPY.intValue());  //预占
+			this.getHibernateTemplate().saveOrUpdate(rechargeCard);
+			return rechargeCard;
 		}
 		return null;
 	}
 	
 	//根据号码查询被占用的充值卡
-	public RechargeCard findOccupyCardByMobile(String mobile) {
-		String hql = "from RechargeCard where useState = 3 mobile = ?";
-		List<RechargeCard> areaCodes = (List<RechargeCard>)this.getHibernateTemplate().find(hql, mobile);
+	public RechargeCard findOccupyCardByFlowNo(String flowNo) {
+		String hql = "from RechargeCard where useState = 3 and flowno = ?";
+		List<RechargeCard> areaCodes = (List<RechargeCard>)this.getHibernateTemplate().find(hql, flowNo);
 		if (areaCodes.size() == 1) {
 			return areaCodes.get(0);
 		}
 		if (areaCodes.size() > 1) {
-			log.error("同一个号码占用了多张充值卡:mobile=="+mobile);
+			log.error("同一个订单占用了多张充值卡:flowNo=="+flowNo);
 		}
 		return null;
 	}

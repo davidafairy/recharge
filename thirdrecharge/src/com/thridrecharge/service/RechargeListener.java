@@ -9,10 +9,13 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.thridrecharge.service.ordermanager.callback.CallbackManager;
+import com.thridrecharge.service.ordermanager.recharge.RechargeManager;
 
 public class RechargeListener implements ServletContextListener {
 
-	private Log log = LogFactory.getLog("recharge");
+	private Log callbacklog = LogFactory.getLog("callback");
+	
+	private Log rechargelog = LogFactory.getLog("recharge");
 	
 	@Override
 	public void contextDestroyed(ServletContextEvent context) {
@@ -27,14 +30,26 @@ public class RechargeListener implements ServletContextListener {
 			RechargeContext.getRechargeContext().setAppContext(springContext);
 			final CallbackManager callbackManager = (CallbackManager)springContext.getBean("callbackManager");
 			
+			//启动回调任务
+			new Thread(new Runnable(){
+
+				@Override
+				public void run() {
+					callbacklog.info("************************充值回调任务启动*******************");
+					callbackManager.startRecharge();
+					callbacklog.info("************************充值回调任务启动成功*******************");
+				}}).start();
+			
+			final RechargeManager rechargeManager = (RechargeManager)springContext.getBean("rechargeManager");
+
 			//启动充值任务
 			new Thread(new Runnable(){
 
 				@Override
 				public void run() {
-					log.info("************************充值回调任务启动*******************");
-					callbackManager.startRecharge();
-					log.info("************************充值回调任务启动成功*******************");
+					rechargelog.info("************************充值任务启动*******************");
+					rechargeManager.startRecharge();
+					rechargelog.info("************************充值任务启动成功*******************");
 				}}).start();
 			
 			
