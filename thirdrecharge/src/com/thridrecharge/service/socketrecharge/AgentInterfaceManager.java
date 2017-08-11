@@ -13,9 +13,12 @@ import org.springframework.stereotype.Controller;
 
 import com.thridrecharge.service.RechargeException;
 import com.thridrecharge.service.entity.Agent;
+import com.thridrecharge.service.entity.AreaCode;
 import com.thridrecharge.service.entity.OrderHis;
 import com.thridrecharge.service.entity.ShopNo;
 import com.thridrecharge.service.enums.ErrorCode;
+import com.thridrecharge.service.enums.OrderChannel;
+import com.thridrecharge.service.enums.Switch;
 import com.thridrecharge.service.memory.AreaCodeMemory;
 import com.thridrecharge.service.ordermanager.recharge.RechargeDao;
 import com.thridrecharge.service.socket.BizConstants;
@@ -50,7 +53,8 @@ public class AgentInterfaceManager {
 		log.info("########集  团  号：【"+groupno+"】");
 		log.info("########金      额：【"+money+"】");
 		log.info("########################################");
-		boolean isRechargeRate = checkRechargeRate(mobile);
+//		boolean isRechargeRate = chooseChannel(mobile);
+		boolean isRechargeRate = false;
 		if (!isRechargeRate) {
 			log.info("########充值结果：充值失败（该号码所在区域不是百分之百成功）");
 			throw new RechargeException(ErrorCode.SERVERUNAVAILABLE);
@@ -148,25 +152,37 @@ public class AgentInterfaceManager {
 		}
 	}
 	
+	//选择渠道
 	//根据数据库中配置的成功概率，随机判断该号码能否充值
-	public boolean checkRechargeRate(String phoneNo) {
+	public OrderChannel chooseChannel(String phoneNo) {
+		
+		AreaCode areaCode = null;
+		
 		try{
 			
 			String areaCodeDesc = AreaCodeMemory.getAreaCodeMemeory().getAgentCode(phoneNo);
-			int rate = agentInterfaceDao.getAreaSuccessRate(areaCodeDesc);
+			areaCode = agentInterfaceDao.getAreaCode(areaCodeDesc);
 			
+			int rate = areaCode.getRate();
 			//如果计数器到达10以后，重新从0开始技术
 			if (count == 10) {
 				count = 0;
 			}
 			count++;
-			if (count <= rate) {
-				return true;
+			if (count <= rate) { //走线下
+				return OrderChannel.OFFLINE;
 			}
 			
-			return false;
 		} catch(Exception e) {
-			return false;
+			log.error("", e);
 		}
+		
+		//默认走线上
+		if (null != areaCode && areaCode.getOnlineSwitch() == Switch.OPEN.intValue()) {
+			return OrderChannel.ONLINE;
+		}
+		
+		//如果以上都失败，则不选择任何渠道，充值失败
+		return OrderChannel.NIL;
 	}
 }

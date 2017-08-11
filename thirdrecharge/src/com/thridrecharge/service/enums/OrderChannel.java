@@ -9,7 +9,11 @@ public enum OrderChannel {
 	ONLINE(2),
 	
 	//充值卡充值
-	RECHARGECARD(3);
+	RECHARGECARD(3),
+	
+	//什么渠道都不走，充值失败
+	NIL(4);
+	
 	private int channel;
 	
 	private OrderChannel(int channel) {

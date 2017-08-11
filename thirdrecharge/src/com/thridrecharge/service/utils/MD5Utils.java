@@ -90,7 +90,7 @@ public class MD5Utils {
     public static void main(String[] args) {
 //    	                                        userid=oufei001&orderid=536&sporderid=1&merchantsubmittime=20140514102201&result=1&key=Abcd1234
 //    	                                        userid=oufei001&orderid=536&sporderid=1&merchantsubmittime=20140514102201&result=1&key=Abcd1234
-        String password = MD5Utils.encodeByMD5("agentName=xuansheng001&flowNo=Z2016071217254031783&phoneNo=13245755275&money=5000&key=Abc123456");
+        String password = MD5Utils.encodeByMD5("agentName=gaoyang001&flowNo=HF101702201605362243&phoneNo=18662080112&money=1000&key=Abc123456");
         System.out.println(password);
     }
 }

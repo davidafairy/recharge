@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.thridrecharge.service.entity.Agent;
 import com.thridrecharge.service.entity.Order;
@@ -22,6 +23,7 @@ import com.thridrecharge.service.enums.OrderChannel;
 import com.thridrecharge.service.enums.OrderStatus;
 
 @Repository
+@Transactional
 public class OrderDao extends HibernateDaoSupport {
 	
 	@Autowired
@@ -31,6 +33,10 @@ public class OrderDao extends HibernateDaoSupport {
 	
 	public void saveOrder(Order order) {
 		this.getHibernateTemplate().saveOrUpdate(order);
+	}
+	
+	public void updateOrder(Order order) {
+		this.getHibernateTemplate().update(order);
 	}
 	
 	public List<Order> getTop10Order() {

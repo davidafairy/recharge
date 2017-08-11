@@ -8,9 +8,12 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Property;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
@@ -21,9 +24,12 @@ import com.thridrecharge.service.RechargeException;
 import com.thridrecharge.service.entity.Agent;
 import com.thridrecharge.service.entity.AreaCode;
 import com.thridrecharge.service.entity.DealRecord;
+import com.thridrecharge.service.entity.Order;
 import com.thridrecharge.service.entity.OrderHis;
 import com.thridrecharge.service.entity.RechargeCard;
 import com.thridrecharge.service.enums.ErrorCode;
+import com.thridrecharge.service.enums.OrderChannel;
+import com.thridrecharge.service.enums.OrderStatus;
 import com.thridrecharge.service.enums.RechargeCardStatus;
 import com.thridrecharge.service.memory.AgentMemory;
 
@@ -53,17 +59,36 @@ public class RechargeDao extends HibernateDaoSupport {
 		return cardList.size();
 	}
 	
-	public synchronized RechargeCard getRechargeCard(long amount) {
-		String hql = "from RechargeCard where amount = ? and usestate = 1";
-		List<RechargeCard> cardList = (List<RechargeCard>)this.getHibernateTemplate().find(hql, amount);
-		if (cardList.size() > 0) {
-			RechargeCard rechargeCard = cardList.get(0);
+	public  RechargeCard getRechargeCard(final long amount) {
+		
+		List list = getHibernateTemplate().executeFind(new HibernateCallback() {
+			public Object doInHibernate(Session session)
+					throws HibernateException, SQLException {
+				Criteria crit = session.createCriteria(RechargeCard.class);
+				
+				//排序方法
+				crit.add(Restrictions.eq("amount",amount));   //查询待充值
+				crit.add(Restrictions.eq("useState",RechargeCardStatus.UNUSE.intValue()));   //渠道3表示充值卡充值
+				//分页
+				crit.setMaxResults(1);
+				List list = crit.list();
+				
+				return list;
+			}
+		});
+		
+		if (list.size() > 0) {
+			RechargeCard rechargeCard = (RechargeCard)list.get(0);
 			
 			rechargeCard.setUseState(RechargeCardStatus.OCCUPY.intValue());  //预占
+			
 			this.getHibernateTemplate().saveOrUpdate(rechargeCard);
+			
 			return rechargeCard;
 		}
+		
 		return null;
+		
 	}
 	
 	//根据号码查询被占用的充值卡

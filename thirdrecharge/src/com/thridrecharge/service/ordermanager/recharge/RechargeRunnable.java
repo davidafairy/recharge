@@ -56,6 +56,8 @@ public class RechargeRunnable implements Runnable {
 //	
 	private OrderDao orderDao;
 	
+	private static Object obj = new Object();
+	
 	public RechargeRunnable(Order order) {
 		this.order = order;
 		
@@ -213,14 +215,17 @@ public class RechargeRunnable implements Runnable {
 		if (!rechargeResult) {
 			order.setDealResult(2);  //充值失败
 			order.setRechargeTime(Calendar.getInstance().getTime());
+			
+			log.info("********充值卡充值失败");
+			RechargePool.getInstance().processResult(order);
 		} 
 		/////////////////////////////////////////////////////测试用，测试完需要恢复上面代码
 //		orderHis.setCallback(1);
 		//记录已充值订单历史
-		RechargePool.getInstance().processResult(order);
+		
 //		orderDao.saveOrder(order);
 		
-		log.info("********充值完成时间：【"+sdf.format(order.getRechargeTime())+"】");
+		log.info("********充值完成时间：【"+sdf.format(Calendar.getInstance().getTime())+"】");
 	}
 	
 	/**
@@ -327,11 +332,18 @@ public class RechargeRunnable implements Runnable {
 			
 //			String areaCodeDesc = AreaCodeMemory.getAreaCodeMemeory().getAgentCode(order.getMobile());
 //			AreaCode areaCode = rechargeDao.getAreaCode(areaCodeDesc);
-			RechargeCard rechargeCard = rechargeDao.getRechargeCard(order.getMoney());
-			
-			if (null == rechargeCard) {
-				return false;
+		
+			RechargeCard rechargeCard;
+			synchronized(obj){
+				rechargeCard = rechargeDao.getRechargeCard(order.getMoney());
+				
+				if (null == rechargeCard) {
+					return false;
+				}
+				
+				log.info("锁定充值卡：flowno=["+order.getFlowNo()+"],cardno="+rechargeCard.getCardNo());
 			}
+			
 			//AES加密key 假设商户约定密钥为SSS0JKEU9TR7H244ORNMU94MQ6HXDDDD
 	        String key = MD5Utils.encodeByMD5("Abcd1234").substring(0, 16).toLowerCase();
 	        

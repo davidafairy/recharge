@@ -12,7 +12,10 @@ public enum OrderStatus {
 	SUCCESS(3),
 	
 	//回调中
-	CALLBACK(4);
+	CALLBACK(4),
+
+	//可疑
+	SUSPICIOUS(5);
 	
 	private int status;
 	

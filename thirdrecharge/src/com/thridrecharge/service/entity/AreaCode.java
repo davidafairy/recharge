@@ -1,10 +1,13 @@
 package com.thridrecharge.service.entity;
 
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Lob;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
@@ -21,7 +24,9 @@ public class AreaCode {
 	@Column(name="DESCRIPTION")
 	private String description;
 	
-	@Column(name="PHONE_NO")
+	@Lob 
+	@Basic(fetch = FetchType.EAGER) 
+	@Column(name="PHONE_NO2", columnDefinition="CLOB", nullable=true)
 	private String phoneNo;
 	
 	@Column(name="SUCCESS_RATE")
@@ -30,6 +35,10 @@ public class AreaCode {
 	//充值策略。1：接口充值；2：接口优先；3：仅限卡密；4：卡密优先
 	@Column(name="RECHARGE_STRATEGY")
 	private int rechargeStrategy;
+	
+	//线上开关。1：开；2：关
+	@Column(name="ONLINE_SWITCH")
+	private int onlineSwitch;
 
 	//城市编码。
 	//南京340
@@ -95,5 +104,15 @@ public class AreaCode {
 	public void setCityCode(String cityCode) {
 		this.cityCode = cityCode;
 	}
+
+	public int getOnlineSwitch() {
+		return onlineSwitch;
+	}
+
+	public void setOnlineSwitch(int onlineSwitch) {
+		this.onlineSwitch = onlineSwitch;
+	}
+	
+	
 	
 }

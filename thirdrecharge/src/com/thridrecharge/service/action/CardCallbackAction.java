@@ -13,6 +13,7 @@ import com.opensymphony.xwork2.ActionSupport;
 import com.thridrecharge.service.entity.Order;
 import com.thridrecharge.service.entity.RechargeCard;
 import com.thridrecharge.service.enums.DealResult;
+import com.thridrecharge.service.enums.OrderStatus;
 import com.thridrecharge.service.enums.RechargeCardStatus;
 import com.thridrecharge.service.ordermanager.OrderDao;
 import com.thridrecharge.service.ordermanager.OrderManager;
@@ -73,48 +74,71 @@ public class CardCallbackAction extends ActionSupport {
 			log.info("========sKey【"+sKey+"】");
 			if (sKey.equalsIgnoreCase(sign)) {
 				
-				Order order = orderDao.findOrderByFlowNo(sporder_id);
-				RechargeCard rechargeCard = rechargeDao.findOccupyCardByFlowNo(order.getFlowNo());
 				
-				order.setRechargeTime(Calendar.getInstance().getTime());
+				Order order = orderDao.findOrderByFlowNo(sporder_id);
+				
+				while(order.getStatus() == OrderStatus.RECEIVE.intValue()) {
+					try {
+						Thread.currentThread().sleep(2000);
+					} catch (InterruptedException e) {
+						//Do nothing
+					}
+					order = orderDao.findOrderByFlowNo(sporder_id);
+				}
+				
+				RechargeCard rechargeCard = rechargeDao.findOccupyCardByFlowNo(order.getFlowNo());
 				
 				//充值成功
 				if ("2000".equals(rechargeinfo) ||
 						"2001".equals(rechargeinfo)||
 						"2003".equals(rechargeinfo)) {
 					
+					order.setRechargeTime(Calendar.getInstance().getTime());
 					order.setDealResult(DealResult.SUCCESS.intValue()); //充值成功
 					rechargeCard.setUseState(RechargeCardStatus.USED.intValue()); //已使用
+					//修改充值卡状态
+					rechargeDao.updateRechargeCard(rechargeCard);
 				} else {
-					order.setDealResult(DealResult.FAULT.intValue()); //充值失败
 					
-					//卡密异常
-					if ("3001".equals(rechargeinfo) ||
-							"3002".equals(rechargeinfo)||
-							"3003".equals(rechargeinfo)) {
-						rechargeCard.setUseState(RechargeCardStatus.ERROR.intValue()); //卡密不可用
+					if ("7003".equals(rechargeinfo)) {  //可疑、需要人工核实
+						order.setStatus(OrderStatus.SUSPICIOUS.intValue());
+						log.info("========订单可疑，FlowNo【"+sporder_id+"】");
 					} else {
-						rechargeCard.setUseState(RechargeCardStatus.UNUSE.intValue()); //未使用
+						
+						order.setRechargeTime(Calendar.getInstance().getTime());
+						order.setDealResult(DealResult.FAULT.intValue()); //充值失败
+						
+						//卡密异常
+						if ("3001".equals(rechargeinfo) ||
+								"3002".equals(rechargeinfo)||
+								"3003".equals(rechargeinfo)) {
+							
+							log.info("========卡密不可用，FlowNo【"+sporder_id+"】，CardNo【"+rechargeCard.getCardNo()+"】");
+							rechargeCard.setUseState(RechargeCardStatus.ERROR.intValue()); //卡密不可用
+							//修改充值卡状态
+							rechargeDao.updateRechargeCard(rechargeCard);
+						} else {
+							rechargeCard.setUseState(RechargeCardStatus.UNUSE.intValue()); //未使用
+							//修改充值卡状态
+							rechargeDao.updateRechargeCard(rechargeCard);
+						}
 					}
+					
 					
 				}
 				
 				
-				//修改充值卡状态
-				rechargeDao.updateRechargeCard(rechargeCard);
-				
 				//修改订单状态
-				orderDao.saveOrder(order);
+				orderDao.updateOrder(order);
 				
 				log.info("========订单回调保存成功，FlowNo【"+sporder_id+"】");
+				log.info(order.toString());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("callback error:", e);
 		}
 		
-			
-			
 			
 	}
 

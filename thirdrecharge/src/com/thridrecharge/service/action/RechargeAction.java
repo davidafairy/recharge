@@ -27,6 +27,7 @@ import com.thridrecharge.service.entity.Order;
 import com.thridrecharge.service.entity.RechargeCard;
 import com.thridrecharge.service.enums.ErrorCode;
 import com.thridrecharge.service.enums.OrderChannel;
+import com.thridrecharge.service.enums.Switch;
 import com.thridrecharge.service.memory.AgentMemory;
 import com.thridrecharge.service.memory.AreaCodeMemory;
 import com.thridrecharge.service.ordermanager.OrderManager;
@@ -130,18 +131,7 @@ public class RechargeAction extends ActionSupport {
 			order.setChannel(OrderChannel.ONLINE.intValue()); //设置默认线上
 			
 			//8.区分渠道
-			if(!(phoneNo.startsWith("156510") || phoneNo.startsWith("156511")
-					 || phoneNo.startsWith("156512") || phoneNo.startsWith("156513")
-					 || phoneNo.startsWith("156514") || phoneNo.startsWith("156515")
-					 || phoneNo.startsWith("156516") || phoneNo.startsWith("1709")) && agent.getRate() == 1) { //屏蔽18651网段的用户
-				
-				//当充值号码不在线下屏蔽号段，并且该代理商支持线下充值
-				//则继续按城市计算线下充值概率，只有条件符合，才走线下
-				boolean isOffline = agentInterfaceManager.checkRechargeRate(phoneNo);
-				if (isOffline) {
-					order.setChannel(OrderChannel.OFFLINE.intValue()); //线下充值
-				} 
-			}
+			
 			//卡密充值渠道
 			String areaCodeDesc = AreaCodeMemory.getAreaCodeMemeory().getAgentCode(order.getMobile());
 			AreaCode areaCode = rechargeDao.getAreaCode(areaCodeDesc);
@@ -150,9 +140,21 @@ public class RechargeAction extends ActionSupport {
 				int unUsedCardNum = rechargeDao.findUnUsedCardNum(order.getMoney());
 				if (unUsedCardNum > 0) {
 					order.setChannel(OrderChannel.RECHARGECARD.intValue()); //卡密充值
+				} else {
+					boolean result = setOnlineRecharge(agent,areaCode,order);
+					if (!result) {
+						return;
+					}
 				}
 				
+			} else {
+				
+				boolean result = setOnlineRecharge(agent,areaCode,order);
+				if (!result) {
+					return;
+				}
 			}
+			
 			
 			//9.记录订单
 			log.info("========开始记录订单：phoneNo【"+phoneNo+"】，money【"+money+"】========");
@@ -169,6 +171,48 @@ public class RechargeAction extends ActionSupport {
 			jsonWrite(ErrorCode.PORTALFAIL);
 			return;
 		}
+	}
+	
+	public boolean setOnlineRecharge(Agent agent,AreaCode areaCode,Order order){
+		if (agent.getRate() == 3) {
+			//只支持线上
+			if (areaCode.getOnlineSwitch() == Switch.CLOSE.intValue()) {
+				//充值失败
+				log.info("========订单接收失败：可能线上接口关闭");
+				jsonWrite(ErrorCode.PORTALFAIL);
+				return false;
+			}
+			order.setChannel(OrderChannel.ONLINE.intValue());
+		} else if((phoneNo.startsWith("156510") || phoneNo.startsWith("156511")
+				 || phoneNo.startsWith("156512") || phoneNo.startsWith("156513")
+				 || phoneNo.startsWith("156514") || phoneNo.startsWith("156515")
+				 || phoneNo.startsWith("156516") || phoneNo.startsWith("1709"))) { //屏蔽18651网段的用户
+			//屏蔽号段只走线上
+			if (areaCode.getOnlineSwitch() == Switch.CLOSE.intValue()) {
+				//充值失败
+				log.info("========订单接收失败：屏蔽号段，并且线上关闭");
+				jsonWrite(ErrorCode.PORTALFAIL);
+				return false;
+			} 
+			//屏蔽号段，只支持线上
+			order.setChannel(OrderChannel.ONLINE.intValue());
+			
+		} else {
+			//则继续按城市计算线下充值概率，只有条件符合，才走线下
+			OrderChannel orderChannel = agentInterfaceManager.chooseChannel(phoneNo);
+			if (orderChannel == OrderChannel.NIL) {
+				//充值失败
+				log.info("========订单接收失败：可能线上接口关闭");
+				jsonWrite(ErrorCode.PORTALFAIL);
+				return false;
+			} else {
+				
+				order.setChannel(orderChannel.intValue()); //设置渠道
+				
+			}
+		}
+		
+		return true;
 	}
 
 	public void jsonWrite(ErrorCode error) {
@@ -258,4 +302,10 @@ public class RechargeAction extends ActionSupport {
     	return request.getHeader("x-forwarded-for");
 
     }
+    
+    public static void main(String[] args) {
+    	String source ="agentName=gaoyang001&flowNo=HF1000060815574000&phoneNo=18652005099&money=2000&key=Abc123456";
+    	String realSign = MD5Utils.encodeByMD5(source);
+    	System.out.println(realSign);
+	}
 }

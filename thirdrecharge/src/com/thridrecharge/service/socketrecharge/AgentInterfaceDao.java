@@ -48,4 +48,13 @@ public class AgentInterfaceDao extends HibernateDaoSupport {
 		}
 		return 0;
 	}
+	
+	public AreaCode getAreaCode(String description) {
+		String hql = "from AreaCode where description = ?";
+		List<AreaCode> areaCodes = (List<AreaCode>)this.getHibernateTemplate().find(hql, description);
+		if (areaCodes.size() > 0) {
+			return areaCodes.get(0);
+		}
+		return null;
+	}
 }
